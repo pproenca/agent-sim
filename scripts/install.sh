@@ -86,7 +86,8 @@ download() {
 
   local tmp
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" EXIT
 
   if ! curl -fsSL "$url" -o "$tmp/agent-sim.tar.gz"; then
     red "Download failed."
