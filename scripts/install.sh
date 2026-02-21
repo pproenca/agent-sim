@@ -31,7 +31,7 @@ check_prerequisites() {
     exit 1
   fi
 
-  # Xcode
+  # Xcode + simctl
   if ! xcode-select -p &>/dev/null; then
     red "Xcode is not installed."
     echo ""
@@ -40,19 +40,12 @@ check_prerequisites() {
     echo ""
     echo "  agent-sim controls iOS Simulators, which require Xcode."
     failed=1
+  elif ! xcrun simctl help &>/dev/null; then
+    red "xcrun simctl not working — Xcode may be incomplete."
+    echo "  Ensure you have a full Xcode install (not just Command Line Tools)."
+    failed=1
   else
-    local xcode_path
-    xcode_path="$(xcode-select -p)"
-    dim "  Xcode: $xcode_path"
-
-    # Verify CoreSimulator exists
-    local coresim="$xcode_path/../SharedFrameworks/CoreSimulator.framework"
-    if [[ ! -d "$coresim" ]]; then
-      red "CoreSimulator.framework not found at expected path."
-      echo "  Expected: $coresim"
-      echo "  Ensure you have a full Xcode install (not just Command Line Tools)."
-      failed=1
-    fi
+    dim "  Xcode: $(xcode-select -p)"
   fi
 
   # Simulator runtime
