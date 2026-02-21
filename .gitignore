@@ -1,0 +1,6 @@
+.build/
+dist/
+.swiftpm/
+.agent-sim/
+build/
+*.xcuserstate

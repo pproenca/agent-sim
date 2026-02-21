@@ -1,0 +1,5 @@
+{
+  "name": "agentsim",
+  "version": "1.0.0",
+  "description": "AI-driven iOS simulator exploration — QA sweeps, BDD journaling, regression replay"
+}
