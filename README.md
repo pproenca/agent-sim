@@ -11,7 +11,7 @@ Built on [FBSimulatorControl](https://github.com/facebook/idb) (Meta's IDB frame
 brew install pproenca/tap/agent-sim
 
 # or curl
-curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
 ```
 
 ### Requirements

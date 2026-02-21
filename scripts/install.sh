@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # agent-sim installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
 
 VERSION="${AGENT_SIM_VERSION:-latest}"
 INSTALL_DIR="${AGENT_SIM_DIR:-/usr/local/lib/agent-sim}"
