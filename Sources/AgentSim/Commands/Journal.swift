@@ -114,7 +114,7 @@ struct JournalLog: ParsableCommand {
 
     var entry = """
 
-      ### #\(index) — \(target.isEmpty ? action : target)
+      \(Self.buildHeading(index: index, action: action, target: target))
 
       - **Action**: \(action)
       """
@@ -123,13 +123,13 @@ struct JournalLog: ParsableCommand {
       entry += "\n- **Coordinates**: (\(coords))"
     }
     if !before.isEmpty {
-      entry += "\n- **Screen before**: \(before)\(beforeName.isEmpty ? "" : " — \(beforeName)")"
+      entry += "\n- **Screen before**: \(Self.buildScreenLine(prefix: "before", hash: before, name: beforeName))"
     }
 
     entry += "\n- **Result**: \(result)"
 
     if !after.isEmpty {
-      entry += "\n- **Screen after**: \(after)\(afterName.isEmpty ? "" : " — \(afterName)")"
+      entry += "\n- **Screen after**: \(Self.buildScreenLine(prefix: "after", hash: after, name: afterName))"
     }
     if let screenshot {
       entry += "\n- **Screenshot**: \(screenshot)"
@@ -147,19 +147,11 @@ struct JournalLog: ParsableCommand {
 
     // Update JSON sidecar
     let jsonPath = SweepStateReader.jsonSidecarPath(for: path)
-    let journalEntry = JournalEntry(
-      index: index,
-      action: action,
-      target: target,
-      coords: coords.isEmpty ? nil : coords,
-      screenBefore: before,
-      screenBeforeName: beforeName,
-      result: result,
-      screenAfter: after.isEmpty ? nil : after,
-      screenAfterName: afterName.isEmpty ? nil : afterName,
-      screenshot: screenshot,
-      issue: issue,
-      timestamp: ISO8601DateFormatter().string(from: Date())
+    let journalEntry = Self.buildJournalEntry(
+      index: index, action: action, target: target,
+      coords: coords, before: before, beforeName: beforeName,
+      result: result, after: after, afterName: afterName,
+      screenshot: screenshot, issue: issue
     )
 
     var sidecar: JournalSidecar
@@ -175,6 +167,38 @@ struct JournalLog: ParsableCommand {
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     let jsonData = try encoder.encode(sidecar)
     try jsonData.write(to: URL(fileURLWithPath: jsonPath), options: .atomic)
+  }
+
+  // MARK: - Testable Builders
+
+  static func buildHeading(index: Int, action: String, target: String) -> String {
+    "### #\(index) — \(target.isEmpty ? action : target)"
+  }
+
+  static func buildJournalEntry(
+    index: Int, action: String, target: String,
+    coords: String, before: String, beforeName: String,
+    result: String, after: String, afterName: String,
+    screenshot: String?, issue: String?
+  ) -> JournalEntry {
+    JournalEntry(
+      index: index,
+      action: action,
+      target: target,
+      coords: coords.isEmpty ? nil : coords,
+      screenBefore: before,
+      screenBeforeName: beforeName,
+      result: result,
+      screenAfter: after.isEmpty ? nil : after,
+      screenAfterName: afterName.isEmpty ? nil : afterName,
+      screenshot: screenshot,
+      issue: issue,
+      timestamp: ISO8601DateFormatter().string(from: Date())
+    )
+  }
+
+  static func buildScreenLine(prefix: String, hash: String, name: String) -> String {
+    "\(hash)\(name.isEmpty ? "" : " — \(name)")"
   }
 }
 

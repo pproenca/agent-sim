@@ -177,4 +177,130 @@ struct SweepStateReaderTests {
     // Action 4: crash-recovery → navigated (depth 1)
     #expect(state.currentDepth == 1)
   }
+
+  // MARK: - Tapped Element Edge Cases
+
+  @Test("Entry with empty target is not added to tappedElements")
+  func emptyTargetNotTapped() {
+    let entries = [
+      JournalEntry(
+        index: 1, action: "tap", target: "",
+        coords: nil, screenBefore: "abc12345", screenBeforeName: "Home",
+        result: "same-screen", screenAfter: nil, screenAfterName: nil,
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:00:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.tappedElements.isEmpty)
+  }
+
+  @Test("Entry with empty screenBefore is not added to tappedElements")
+  func emptyScreenBeforeNotTapped() {
+    let entries = [
+      JournalEntry(
+        index: 1, action: "tap", target: "Button",
+        coords: nil, screenBefore: "", screenBeforeName: "",
+        result: "same-screen", screenAfter: nil, screenAfterName: nil,
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:00:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.tappedElements.isEmpty)
+  }
+
+  @Test("Entries without issues have zero issue count")
+  func noIssuesCountsZero() {
+    let entries = [
+      JournalEntry(
+        index: 1, action: "tap", target: "A",
+        coords: nil, screenBefore: "s1", screenBeforeName: "S1",
+        result: "same-screen", screenAfter: nil, screenAfterName: nil,
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:00:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.issues == 0)
+  }
+
+  @Test("Entries with issues count correctly")
+  func issuesCounted() {
+    let entries = [
+      JournalEntry(
+        index: 1, action: "tap", target: "A",
+        coords: nil, screenBefore: "s1", screenBeforeName: "S1",
+        result: "same-screen", screenAfter: nil, screenAfterName: nil,
+        screenshot: nil, issue: "Button does nothing", timestamp: "2026-02-22T10:00:00Z"
+      ),
+      JournalEntry(
+        index: 2, action: "tap", target: "B",
+        coords: nil, screenBefore: "s1", screenBeforeName: "S1",
+        result: "navigated", screenAfter: "s2", screenAfterName: "S2",
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:01:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.issues == 1)
+  }
+
+  @Test("Forward-only navigation depth increments correctly")
+  func forwardOnlyDepth() {
+    let entries = [
+      JournalEntry(
+        index: 1, action: "tap", target: "A",
+        coords: nil, screenBefore: "s1", screenBeforeName: "S1",
+        result: "navigated", screenAfter: "s2", screenAfterName: "S2",
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:00:00Z"
+      ),
+      JournalEntry(
+        index: 2, action: "tap", target: "B",
+        coords: nil, screenBefore: "s2", screenBeforeName: "S2",
+        result: "navigated", screenAfter: "s3", screenAfterName: "S3",
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:01:00Z"
+      ),
+      JournalEntry(
+        index: 3, action: "tap", target: "C",
+        coords: nil, screenBefore: "s3", screenBeforeName: "S3",
+        result: "navigated", screenAfter: "s4", screenAfterName: "S4",
+        screenshot: nil, issue: nil, timestamp: "2026-02-22T10:02:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.currentDepth == 3)
+  }
+
+  // MARK: - Markdown Depth Edge Cases
+
+  @Test("Markdown forward-only navigations produce correct depth")
+  func markdownForwardOnlyDepth() {
+    let path = JournalFixtures.writeTempFile(JournalFixtures.forwardOnly)
+    let state = SweepStateReader.readJournal(at: path)!
+
+    // 3 forward taps → depth 3
+    #expect(state.currentDepth == 3)
+  }
+
+  @Test("Markdown extractFingerprint returns nil for malformed lines")
+  func markdownMalformedScreenLine() {
+    let markdown = """
+      # Sweep Journal
+
+      ## Actions
+
+      ### #1 — Sign In
+
+      - **Action**: tap
+      - **Screen before**:
+      - **Result**: same-screen
+
+      """
+    let path = JournalFixtures.writeTempFile(markdown)
+    let state = SweepStateReader.readJournal(at: path)!
+
+    #expect(state.screens.isEmpty)
+  }
 }

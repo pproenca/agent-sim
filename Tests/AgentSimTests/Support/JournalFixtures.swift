@@ -126,6 +126,42 @@ enum JournalFixtures {
 
     """
 
+  /// Three forward navigations — no back actions. Depth should be 3.
+  static let forwardOnly = """
+    # Sweep Journal
+
+    ## Metadata
+
+    - **Started**: 2026-02-22T10:00:00Z
+    - **Simulator**: iPhone 16
+    - **Scope**: Full app exploration
+    - **Status**: in-progress
+
+    ## Actions
+
+    ### #1 — Sign In
+
+    - **Action**: tap
+    - **Screen before**: abc12345 — Welcome
+    - **Result**: navigated
+    - **Screen after**: def67890 — Home
+
+    ### #2 — Settings
+
+    - **Action**: tap
+    - **Screen before**: def67890 — Home
+    - **Result**: navigated
+    - **Screen after**: ghi11111 — Settings
+
+    ### #3 — Privacy
+
+    - **Action**: tap
+    - **Screen before**: ghi11111 — Settings
+    - **Result**: navigated
+    - **Screen after**: jkl22222 — Privacy
+
+    """
+
   /// Write fixture content to a temporary file and return the path.
   static func writeTempFile(_ content: String, name: String = "test-journal.md") -> String {
     let dir = FileManager.default.temporaryDirectory

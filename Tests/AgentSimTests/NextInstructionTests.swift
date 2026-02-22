@@ -312,6 +312,39 @@ struct NextInstructionTests {
     #expect(action?.target == "left-edge")
   }
 
+  @Test("findBackAction finds 'Done' dismiss button")
+  func findBackFindsDone() {
+    let done = AXNodeBuilder.button("Done", at: (350, 50))
+    let tree = AXNodeBuilder.screenContent(children: [done])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    let action = Next.findBackAction(analysis)
+    #expect(action?.type == .tap)
+    #expect(action?.target == "Done")
+  }
+
+  @Test("findBackAction finds 'Cancel' dismiss button")
+  func findBackFindsCancel() {
+    let cancel = AXNodeBuilder.button("Cancel", at: (30, 50))
+    let tree = AXNodeBuilder.screenContent(children: [cancel])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    let action = Next.findBackAction(analysis)
+    #expect(action?.type == .tap)
+    #expect(action?.target == "Cancel")
+  }
+
+  @Test("findBackAction finds 'Dismiss' button")
+  func findBackFindsDismiss() {
+    let dismiss = AXNodeBuilder.button("Dismiss", at: (196, 50))
+    let tree = AXNodeBuilder.screenContent(children: [dismiss])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    let action = Next.findBackAction(analysis)
+    #expect(action?.type == .tap)
+    #expect(action?.target == "Dismiss")
+  }
+
   // MARK: - maxDepth enforcement
 
   @Test("maxDepth reached on new screen produces screenExhausted")

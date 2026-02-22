@@ -305,6 +305,84 @@ struct ScreenAnalyzerTests {
     #expect(analysis.elementCount == 3) // screen group + button + text
   }
 
+  // MARK: - containsCenter boundary
+
+  @Test("Button below nav bar is classified as action even when nav bar exists")
+  func buttonBelowNavBarIsAction() {
+    let navButton = AXNodeBuilder.button("Back", at: (30, 22))
+    let navBar = AXNodeBuilder.node(
+      role: "AXNavigationBar",
+      x: 0, y: 0, width: 393, height: 44, depth: 2,
+      children: [navButton]
+    )
+    let actionButton = AXNodeBuilder.button("Submit", at: (196, 400))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, actionButton])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.navigation.count == 1)
+    #expect(analysis.navigation[0].name == "Back")
+    #expect(analysis.actions.count == 1)
+    #expect(analysis.actions[0].name == "Submit")
+  }
+
+  // MARK: - Screen name Strategy 1 and 2 boundaries
+
+  @Test("Strategy 1 picks widest text among top elements")
+  func strategy1PicksWidestTopText() {
+    // Two texts near top, different widths, no nav bar
+    let narrow = AXNodeBuilder.text("Narrow", at: (0, 60), size: (100, 20))
+    let wide = AXNodeBuilder.text("Wide Title", at: (0, 80), size: (300, 20))
+    let button = AXNodeBuilder.button("Tap", at: (196, 400))
+    let tree = AXNodeBuilder.screenContent(children: [narrow, wide, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Wide Title")
+  }
+
+  @Test("Strategy 2 picks topmost large text when no top texts exist")
+  func strategy2PicksTopmostLargeText() {
+    // Both texts below y=120, both height > 24, no nav bar
+    let lower = AXNodeBuilder.text("Lower", at: (0, 300), size: (200, 30))
+    let upper = AXNodeBuilder.text("Upper", at: (0, 200), size: (200, 30))
+    let button = AXNodeBuilder.button("Tap", at: (196, 500))
+    let tree = AXNodeBuilder.screenContent(children: [lower, upper, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Upper")
+  }
+
+  @Test("Nav bar with button and text children uses text for screen name")
+  func navBarWithMixedChildrenUsesText() {
+    let editButton = AXNodeBuilder.button("Edit", at: (350, 22))
+    let titleText = AXNodeBuilder.text("Profile", at: (196, 22), size: (200, 20), depth: 3)
+    let navBar = AXNodeBuilder.navigationBar(children: [editButton, titleText])
+    let button = AXNodeBuilder.button("Save", at: (196, 400))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Profile")
+  }
+
+  // MARK: - Suggestion priority ordering
+
+  @Test("Suggestion priorities are sequential — no duplicates")
+  func suggestionPrioritiesSequential() {
+    let button1 = AXNodeBuilder.button("Action 1", at: (196, 400))
+    let button2 = AXNodeBuilder.button("Action 2", at: (196, 500))
+    let tabGroup = AXNodeBuilder.tabGroup(tabs: [("Home", true), ("Profile", false)])
+    let tree = AXNodeBuilder.screenContent(size: (393, 950), children: [button1, button2, tabGroup])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    // Should have: scroll(1), tap Action 1(2), tap Action 2(3), tap-tab Profile(4+)
+    let priorities = analysis.suggestedActions.map(\.priority)
+    let uniquePriorities = Set(priorities)
+    #expect(uniquePriorities.count == priorities.count, "Priorities must be unique: \(priorities)")
+    // Verify sequential ordering
+    for i in 1..<priorities.count {
+      #expect(priorities[i] > priorities[i - 1])
+    }
+  }
+
   // MARK: - Helpers
 
   private func screenWithButton(
