@@ -4,3 +4,4 @@ dist/
 .agent-sim/
 build/
 *.xcuserstate
+references/
