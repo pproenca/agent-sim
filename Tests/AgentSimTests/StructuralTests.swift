@@ -15,7 +15,7 @@ struct StructuralTests {
       phase: .exploring,
       instruction: "Continue exploring",
       action: .init(
-        type: "tap", target: "Button",
+        type: .tap, target: "Button",
         command: "agent-sim tap 100 200",
         reason: "test", tapX: 100, tapY: 200
       ),
@@ -112,7 +112,7 @@ struct StructuralTests {
   func bootedDeviceSendable() {
     let device = SimulatorBridge.BootedDevice(
       udid: "ABC-123", name: "iPhone 16",
-      deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16"
+      screenWidthPoints: 393, screenHeightPoints: 852
     )
     let _: any Sendable = device
     _ = device
@@ -131,46 +131,6 @@ struct StructuralTests {
     #expect(decoded.label == "Submit")
     #expect(decoded.tapX == 196)
     #expect(decoded.tapY == 400)
-  }
-
-  // MARK: - Device size lookup coverage
-
-  @Test("screenSize lookup covers all iPhone 16 variants")
-  func iPhone16FamilyCovered() {
-    let variants = [
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-16",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Plus",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro-Max",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-16e",
-    ]
-
-    for variant in variants {
-      let size = SimulatorBridge.screenSize(for: variant)
-      // None of these should hit the default fallback (393, 852) — except base iPhone 16
-      // which happens to BE (393, 852). So just verify they return valid sizes.
-      #expect(size.width > 0, "\(variant) has zero width")
-      #expect(size.height > 0, "\(variant) has zero height")
-      #expect(size.height > size.width, "\(variant) should be portrait")
-    }
-  }
-
-  @Test("screenSize lookup covers all iPhone 17 variants")
-  func iPhone17FamilyCovered() {
-    let variants = [
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Plus",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max",
-      "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Air",
-    ]
-
-    for variant in variants {
-      let size = SimulatorBridge.screenSize(for: variant)
-      #expect(size.width > 0, "\(variant) has zero width")
-      #expect(size.height > 0, "\(variant) has zero height")
-      #expect(size.height > size.width, "\(variant) should be portrait")
-    }
   }
 
   // MARK: - Error descriptions

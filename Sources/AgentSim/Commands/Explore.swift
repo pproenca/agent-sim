@@ -55,7 +55,7 @@ struct Explore: AsyncParsableCommand {
         screenshotPath: screenshotPath,
         annotatedScreenshotPath: annotatedPath
       )
-      printJSON(output)
+      JSONOutput.print(output)
     }
   }
 
@@ -152,13 +152,6 @@ struct Explore: AsyncParsableCommand {
     }
   }
 
-  private func printJSON(_ value: some Encodable) {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(value) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
-  }
 }
 
 // MARK: - JSON Output

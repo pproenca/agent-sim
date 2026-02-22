@@ -36,7 +36,7 @@ struct Next: AsyncParsableCommand {
     if pretty {
       printPretty(instruction)
     } else {
-      printJSON(instruction)
+      JSONOutput.print(instruction)
     }
   }
 
@@ -55,11 +55,10 @@ struct Next: AsyncParsableCommand {
     do {
       device = try await SimulatorBridge.resolveDevice()
     } catch {
-      return crashedInstruction(
-        reason: "\(error)",
-        recovery: "agent-sim use \"<device name>\"",
-        journalState: journalState,
-        journalPath: journalPath
+      return Self.determineInstruction(
+        journalPath: journalPath, journalState: journalState,
+        analysis: nil, simulatorError: "\(error)",
+        bundleID: bundleID, maxScreens: maxScreens
       )
     }
 
@@ -67,16 +66,54 @@ struct Next: AsyncParsableCommand {
     do {
       simNode = try await AXTreeReader.readDeviceTree(simulatorUDID: device.udid)
     } catch {
-      return crashedInstruction(
-        reason: "No app content found — app may have crashed or is on SpringBoard.",
-        recovery: "agent-sim launch \(bundleID ?? "<bundleId>")",
-        journalState: journalState,
-        journalPath: journalPath
+      return Self.determineInstruction(
+        journalPath: journalPath, journalState: journalState,
+        analysis: nil, simulatorError: nil,
+        bundleID: bundleID, maxScreens: maxScreens
       )
     }
     let analysis = ScreenAnalyzer.analyze(simNode)
 
-    // Phase 3: Check limits
+    return Self.determineInstruction(
+      journalPath: journalPath, journalState: journalState,
+      analysis: analysis, simulatorError: nil,
+      bundleID: bundleID, maxScreens: maxScreens
+    )
+  }
+
+  // MARK: - Pure State Machine (static, testable)
+
+  static func determineInstruction(
+    journalPath: String,
+    journalState: SweepStateReader.JournalState,
+    analysis: ScreenAnalysis?,
+    simulatorError: String?,
+    bundleID: String?,
+    maxScreens: Int
+  ) -> NextInstruction {
+    // Simulator error → crashed
+    if let error = simulatorError {
+      return crashedInstruction(
+        reason: error,
+        recovery: "agent-sim use \"<device name>\"",
+        journalState: journalState,
+        journalPath: journalPath,
+        bundleID: bundleID
+      )
+    }
+
+    // No AX tree → crashed (app not running)
+    guard let analysis else {
+      return crashedInstruction(
+        reason: "No app content found — app may have crashed or is on SpringBoard.",
+        recovery: "agent-sim launch \(bundleID ?? "<bundleId>")",
+        journalState: journalState,
+        journalPath: journalPath,
+        bundleID: bundleID
+      )
+    }
+
+    // Check limits
     if journalState.screens.count >= maxScreens {
       return completeInstruction(
         reason: "Reached screen limit (\(maxScreens)).",
@@ -85,13 +122,14 @@ struct Next: AsyncParsableCommand {
       )
     }
 
-    // Phase 4: Determine what to do on this screen
+    // Determine what to do on this screen
     let currentFingerprint = analysis.fingerprint
-    let isNewScreen = !journalState.screens.contains(String(currentFingerprint.prefix(8)))
+    let shortFP = Fingerprinter.shortFingerprint(from: currentFingerprint)
+    let isNewScreen = !journalState.screens.contains(shortFP)
 
     // Find untapped elements
     let untapped = analysis.actions.filter { action in
-      let key = "\(String(currentFingerprint.prefix(8))):\(action.name)"
+      let key = "\(Fingerprinter.shortFingerprint(from: currentFingerprint)):\(action.name)"
       return !journalState.tappedElements.contains(key)
     }
 
@@ -121,9 +159,9 @@ struct Next: AsyncParsableCommand {
         phase: .newScreen,
         instruction: "New screen discovered: \"\(analysis.screenName)\". Tap the first untapped element.",
         action: .init(
-          type: "tap",
+          type: .tap,
           target: target.name,
-          command: "agent-sim tap --label \"\(target.name)\"",
+          command: "agent-sim tap --label \(shellEscape(target.name))",
           reason: "First untapped interactive element on new screen",
           tapX: target.tapX,
           tapY: target.tapY
@@ -134,10 +172,10 @@ struct Next: AsyncParsableCommand {
           "sleep 1",
           "agent-sim fingerprint --hash-only",
           "agent-sim explore",
-          "agent-sim journal log --path \(journalPath) --index \(actionIndex) --action tap --target \"\(target.name)\" --coords \"\(target.tapX),\(target.tapY)\" --before \"\(String(currentFingerprint.prefix(8)))\" --before-name \"\(analysis.screenName)\" --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
-          "agent-sim next --journal \(journalPath)"
+          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap --target \(shellEscape(target.name)) --coords \"\(target.tapX),\(target.tapY)\" --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
+          "agent-sim next --journal \(shellEscape(journalPath))"
         ],
-        guardrails: Self.standardGuardrails
+        guardrails: standardGuardrails
       )
     } else if !untapped.isEmpty {
       // Known screen with untapped elements
@@ -148,9 +186,9 @@ struct Next: AsyncParsableCommand {
         phase: .exploring,
         instruction: "Continue exploring \"\(analysis.screenName)\". \(untapped.count) elements remaining.",
         action: .init(
-          type: "tap",
+          type: .tap,
           target: target.name,
-          command: "agent-sim tap --label \"\(target.name)\"",
+          command: "agent-sim tap --label \(shellEscape(target.name))",
           reason: "\(untapped.count) untapped elements remain on this screen",
           tapX: target.tapX,
           tapY: target.tapY
@@ -161,10 +199,10 @@ struct Next: AsyncParsableCommand {
           "sleep 1",
           "agent-sim fingerprint --hash-only",
           "agent-sim explore",
-          "agent-sim journal log --path \(journalPath) --index \(actionIndex) --action tap --target \"\(target.name)\" --coords \"\(target.tapX),\(target.tapY)\" --before \"\(String(currentFingerprint.prefix(8)))\" --before-name \"\(analysis.screenName)\" --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
-          "agent-sim next --journal \(journalPath)"
+          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap --target \(shellEscape(target.name)) --coords \"\(target.tapX),\(target.tapY)\" --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
+          "agent-sim next --journal \(shellEscape(journalPath))"
         ],
-        guardrails: Self.standardGuardrails
+        guardrails: standardGuardrails
       )
     } else {
       // Screen exhausted — navigate back
@@ -181,10 +219,10 @@ struct Next: AsyncParsableCommand {
           afterAction: [
             "sleep 1",
             "agent-sim fingerprint --hash-only",
-            "agent-sim journal log --path \(journalPath) --index \(actionIndex) --action back --target \"Back navigation\" --before \"\(String(currentFingerprint.prefix(8)))\" --before-name \"\(analysis.screenName)\" --result <navigated|same-screen> --after <fingerprint> --after-name <screen-name>",
-            "agent-sim next --journal \(journalPath)"
+            "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action back --target 'Back navigation' --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <fingerprint> --after-name <screen-name>",
+            "agent-sim next --journal \(shellEscape(journalPath))"
           ],
-          guardrails: Self.standardGuardrails
+          guardrails: standardGuardrails
         )
       } else {
         // Check if there are unselected tabs
@@ -194,7 +232,7 @@ struct Next: AsyncParsableCommand {
             phase: .screenExhausted,
             instruction: "Screen exhausted and no back navigation found. Switch to next tab: \"\(nextTab.label)\".",
             action: .init(
-              type: "tap",
+              type: .tap,
               target: nextTab.label,
               command: "agent-sim tap \(nextTab.tapX) \(nextTab.tapY)",
               reason: "Switch to unvisited tab",
@@ -206,10 +244,10 @@ struct Next: AsyncParsableCommand {
             afterAction: [
               "sleep 1",
               "agent-sim explore",
-              "agent-sim journal log --path \(journalPath) --index \(actionIndex) --action tap-tab --target \"\(nextTab.label)\" --before \"\(String(currentFingerprint.prefix(8)))\" --before-name \"\(analysis.screenName)\" --result navigated --after <fingerprint> --after-name <screen-name>",
-              "agent-sim next --journal \(journalPath)"
+              "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap-tab --target \(shellEscape(nextTab.label)) --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result navigated --after <fingerprint> --after-name <screen-name>",
+              "agent-sim next --journal \(shellEscape(journalPath))"
             ],
-            guardrails: Self.standardGuardrails
+            guardrails: standardGuardrails
           )
         }
 
@@ -225,15 +263,15 @@ struct Next: AsyncParsableCommand {
 
   // MARK: - Back Navigation
 
-  private func findBackAction(_ analysis: ScreenAnalysis) -> NextInstruction.SuggestedNextAction? {
+  static func findBackAction(_ analysis: ScreenAnalysis) -> NextInstruction.SuggestedNextAction? {
     // Priority 1: Back button in navigation area
     if let back = analysis.navigation.first(where: {
       $0.name.lowercased().contains("back")
     }) {
       return .init(
-        type: "tap",
+        type: .tap,
         target: back.name,
-        command: "agent-sim tap --label \"\(back.name)\"",
+        command: "agent-sim tap --label \(shellEscape(back.name))",
         reason: "Back button found in navigation bar",
         tapX: back.tapX,
         tapY: back.tapY
@@ -247,9 +285,9 @@ struct Next: AsyncParsableCommand {
         || name.contains("dismiss")
     }) {
       return .init(
-        type: "tap",
+        type: .tap,
         target: dismiss.name,
-        command: "agent-sim tap --label \"\(dismiss.name)\"",
+        command: "agent-sim tap --label \(shellEscape(dismiss.name))",
         reason: "Dismiss button found",
         tapX: dismiss.tapX,
         tapY: dismiss.tapY
@@ -258,7 +296,7 @@ struct Next: AsyncParsableCommand {
 
     // Priority 3: Swipe from left edge
     return .init(
-      type: "swipe",
+      type: .swipe,
       target: "left-edge",
       command: "agent-sim swipe right --delta 200",
       reason: "No back/close button found — try swipe-from-left-edge gesture",
@@ -275,33 +313,34 @@ struct Next: AsyncParsableCommand {
       phase: .notStarted,
       instruction: "No journal found. Initialize a sweep journal and start exploring.",
       action: .init(
-        type: "journal-init",
+        type: .journalInit,
         target: "sweep journal",
-        command: "agent-sim journal init --path \(defaultPath) --simulator \"iPhone 16\" --scope \"Full app exploration\"",
+        command: "agent-sim journal init --path \(shellEscape(defaultPath)) --simulator 'iPhone 16' --scope 'Full app exploration'",
         reason: "A journal must exist before the sweep can begin",
         tapX: nil, tapY: nil
       ),
       currentScreen: nil,
       progress: .init(screensVisited: 0, totalActions: 0, issuesFound: 0, crashesDetected: 0, journalPath: nil),
       afterAction: [
-        "agent-sim launch \(bundleID ?? "<bundleId>")",
+        "agent-sim launch \(shellEscape(bundleID ?? "<bundleId>"))",
         "sleep 2",
         "agent-sim explore --pretty",
-        "agent-sim next --journal \(defaultPath)"
+        "agent-sim next --journal \(shellEscape(defaultPath))"
       ],
       guardrails: Self.initGuardrails
     )
   }
 
-  private func crashedInstruction(
+  private static func crashedInstruction(
     reason: String, recovery: String,
-    journalState: SweepStateReader.JournalState, journalPath: String
+    journalState: SweepStateReader.JournalState, journalPath: String,
+    bundleID: String?
   ) -> NextInstruction {
     NextInstruction(
       phase: .crashed,
       instruction: "App appears to have crashed: \(reason)",
       action: .init(
-        type: "recover",
+        type: .recover,
         target: "app",
         command: recovery,
         reason: reason,
@@ -318,14 +357,14 @@ struct Next: AsyncParsableCommand {
       afterAction: [
         "sleep 2",
         "agent-sim explore --pretty",
-        "agent-sim journal log --path \(journalPath) --index \(journalState.totalActions + 1) --action crash-recovery --target \"App recovery\" --result <navigated|error> --issue \"App crashed: \(reason)\"",
-        "agent-sim next --journal \(journalPath)"
+        "agent-sim journal log --path \(shellEscape(journalPath)) --index \(journalState.totalActions + 1) --action crash-recovery --target 'App recovery' --result <navigated|error> --issue \(shellEscape("App crashed: \(reason)"))",
+        "agent-sim next --journal \(shellEscape(journalPath))"
       ],
-      guardrails: Self.crashGuardrails
+      guardrails: crashGuardrails
     )
   }
 
-  private func completeInstruction(
+  private static func completeInstruction(
     reason: String,
     journalState: SweepStateReader.JournalState, journalPath: String
   ) -> NextInstruction {
@@ -342,7 +381,7 @@ struct Next: AsyncParsableCommand {
         journalPath: journalPath
       ),
       afterAction: [
-        "agent-sim journal summary --path \(journalPath)"
+        "agent-sim journal summary --path \(shellEscape(journalPath))"
       ],
       guardrails: [
         "Review the journal for any issues that need follow-up.",
@@ -423,13 +462,6 @@ struct Next: AsyncParsableCommand {
     }
   }
 
-  private func printJSON(_ value: some Encodable) {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(value) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
-  }
 }
 
 private extension DateFormatter {

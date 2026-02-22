@@ -98,11 +98,7 @@ struct Assert: AsyncParsableCommand {
       assertions: results
     )
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(output) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
+    JSONOutput.print(output)
 
     if !allPassed {
       throw ExitCode.failure

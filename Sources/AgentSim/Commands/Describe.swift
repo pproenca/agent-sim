@@ -24,14 +24,14 @@ struct Describe: AsyncParsableCommand {
       if pretty {
         printInteractivePretty(elements)
       } else {
-        printJSON(elements.map(InteractiveElement.init))
+        JSONOutput.print(elements.map(InteractiveElement.init))
       }
     } else {
       if pretty {
         printTreePretty(simNode)
         printStats(simNode)
       } else {
-        printJSON(simNode)
+        JSONOutput.print(simNode)
       }
     }
   }
@@ -73,13 +73,6 @@ struct Describe: AsyncParsableCommand {
     }
   }
 
-  private func printJSON<T: Encodable>(_ value: T) {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(value) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
-  }
 }
 
 // MARK: - JSON output model for interactive elements

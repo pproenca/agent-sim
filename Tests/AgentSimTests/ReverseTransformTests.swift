@@ -143,44 +143,6 @@ struct ReverseTransformTests {
     #expect(maxDriftY < 1.0, "Max Y drift across full range: \(maxDriftY)")
   }
 
-  // MARK: - screenSize lookup
-
-  @Test("screenSize returns correct size for iPhone 16")
-  func screenSizeIPhone16() {
-    let size = SimulatorBridge.screenSize(
-      for: "com.apple.CoreSimulator.SimDeviceType.iPhone-16"
-    )
-    #expect(size.width == 393)
-    #expect(size.height == 852)
-  }
-
-  @Test("screenSize returns correct size for iPhone 16 Pro")
-  func screenSizeIPhone16Pro() {
-    let size = SimulatorBridge.screenSize(
-      for: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"
-    )
-    #expect(size.width == 402)
-    #expect(size.height == 874)
-  }
-
-  @Test("screenSize returns correct size for iPhone 16 Pro Max")
-  func screenSizeIPhone16ProMax() {
-    let size = SimulatorBridge.screenSize(
-      for: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro-Max"
-    )
-    #expect(size.width == 440)
-    #expect(size.height == 956)
-  }
-
-  @Test("screenSize falls back to iPhone 16 for unknown device type")
-  func screenSizeUnknown() {
-    let size = SimulatorBridge.screenSize(
-      for: "com.apple.CoreSimulator.SimDeviceType.iPhone-99"
-    )
-    #expect(size.width == 393)
-    #expect(size.height == 852)
-  }
-
   // MARK: - SwipeDirection coordinates
 
   @Test("SwipeDirection.up swipes from center-bottom to center-top")

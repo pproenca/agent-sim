@@ -47,6 +47,15 @@ struct AXNode: Sendable, Encodable {
   }
 }
 
+extension AXNode {
+  /// Recursively flatten this node and all descendants into a flat array.
+  func flattened() -> [AXNode] {
+    var result = [self]
+    for child in children { result.append(contentsOf: child.flattened()) }
+    return result
+  }
+}
+
 // MARK: - Tree Reader
 
 enum AXTreeReader {
@@ -83,12 +92,7 @@ enum AXTreeReader {
 
   /// Collect all interactive elements from a tree.
   static func collectInteractive(_ node: AXNode) -> [AXNode] {
-    var result: [AXNode] = []
-    if node.isInteractive { result.append(node) }
-    for child in node.children {
-      result.append(contentsOf: collectInteractive(child))
-    }
-    return result
+    node.flattened().filter(\.isInteractive)
   }
 
   /// Count elements by role.

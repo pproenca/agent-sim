@@ -8,9 +8,27 @@ import ObjectiveC
 /// Provides the convenience API that SimulatorBridge expects.
 enum HIDInteractor {
 
-  // Single-threaded CLI — no concurrent access.
-  nonisolated(unsafe) private static var hidConnections: [String: FBSimulatorHID] = [:]
-  nonisolated(unsafe) private static var isSetUp = false
+  /// Thread-safe mutable state — lock-protected, `Sendable` without `nonisolated(unsafe)`.
+  private final class State: @unchecked Sendable {
+    private let lock = NSLock()
+    private var connections: [String: FBSimulatorHID] = [:]
+    private var setUp = false
+
+    var isSetUp: Bool {
+      get { lock.withLock { setUp } }
+      set { lock.withLock { setUp = newValue } }
+    }
+
+    func connection(for udid: String) -> FBSimulatorHID? {
+      lock.withLock { connections[udid] }
+    }
+
+    func setConnection(_ hid: FBSimulatorHID, for udid: String) {
+      lock.withLock { connections[udid] = hid }
+    }
+  }
+
+  private static let state = State()
 
   private static var stabilizationDelayMs: UInt64 {
     if let envValue = ProcessInfo.processInfo.environment["AXE_HID_STABILIZATION_MS"],
@@ -55,19 +73,7 @@ enum HIDInteractor {
   // MARK: - Core
 
   private static func performHIDEvent(_ event: FBSimulatorHIDEvent, simulatorID: String) async throws {
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
-    let reporter = FBEmptyEventReporter.shared
-
-    let config = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: logger, reporter: reporter)
-    let controlSet = try FBSimulatorControl.withConfiguration(config)
-
-    guard let simulator = controlSet.set.allSimulators.first(where: { $0.udid == simulatorID }) else {
-      throw HIDError.simulatorNotFound(simulatorID)
-    }
-    guard simulator.state == .booted else {
-      throw HIDError.simulatorNotBooted(simulatorID)
-    }
-
+    let simulator = try SimulatorControlFactory.resolveSimulator(udid: simulatorID)
     let hid = try await getOrCreateHIDConnection(for: simulator)
     let future = event.perform(on: hid)
     _ = try await FutureBridge.value(future)
@@ -78,18 +84,18 @@ enum HIDInteractor {
   }
 
   private static func getOrCreateHIDConnection(for simulator: FBSimulator) async throws -> FBSimulatorHID {
-    if let existing = hidConnections[simulator.udid] {
+    if let existing = state.connection(for: simulator.udid) {
       return existing
     }
     let hid = try await FutureBridge.value(simulator.connectToHID())
-    hidConnections[simulator.udid] = hid
+    state.setConnection(hid, for: simulator.udid)
     return hid
   }
 
   // MARK: - One-time setup
 
   static func ensureSetUp() async throws {
-    guard !isSetUp else { return }
+    guard !state.isSetUp else { return }
 
     let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
 
@@ -107,7 +113,7 @@ enum HIDInteractor {
       throw HIDError.simulatorKitNotLoaded
     }
 
-    isSetUp = true
+    state.isSetUp = true
   }
 
   // MARK: - Error

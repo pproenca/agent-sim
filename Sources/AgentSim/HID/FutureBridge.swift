@@ -5,6 +5,7 @@ import Foundation
 
 enum FBFutureError: Error {
   case continuationFulfilledWithoutValues
+  case unexpectedType(expected: String, actual: String)
 }
 
 enum FutureBridge {
@@ -16,8 +17,12 @@ enum FutureBridge {
           if let error = resolved.error {
             continuation.resume(throwing: error)
           } else if let value = resolved.result {
-            // swiftlint:disable:next force_cast
-            continuation.resume(returning: value as! T)
+            guard let typed = value as? T else {
+              continuation.resume(throwing: FBFutureError.unexpectedType(
+                expected: "\(T.self)", actual: "\(type(of: value))"))
+              return
+            }
+            continuation.resume(returning: typed)
           } else {
             continuation.resume(throwing: FBFutureError.continuationFulfilledWithoutValues)
           }

@@ -44,18 +44,7 @@ enum AccessibilityFetcher {
   /// Returns native iOS device-point coordinates — no transforms needed.
   static func fetch(simulatorUDID: String) async throws -> [AccessibilityElement] {
     try await HIDInteractor.ensureSetUp()
-
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
-    let reporter = FBEmptyEventReporter.shared
-    let config = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: logger, reporter: reporter)
-    let controlSet = try FBSimulatorControl.withConfiguration(config)
-
-    guard let simulator = controlSet.set.allSimulators.first(where: { $0.udid == simulatorUDID }) else {
-      throw AccessibilityFetchError.simulatorNotFound(simulatorUDID)
-    }
-    guard simulator.state == .booted else {
-      throw AccessibilityFetchError.simulatorNotBooted(simulatorUDID)
-    }
+    let simulator = try SimulatorControlFactory.resolveSimulator(udid: simulatorUDID)
 
     let future: FBFuture<AnyObject> = simulator.accessibilityElements(withNestedFormat: true)
     let result = try await FutureBridge.value(future)

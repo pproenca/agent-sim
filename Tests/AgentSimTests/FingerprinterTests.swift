@@ -90,13 +90,19 @@ struct FingerprinterTests {
     #expect(full.hasPrefix(short))
   }
 
-  @Test("Fingerprint has expected length (16 hex chars)")
+  @Test("Fingerprint has expected length (32 hex chars)")
   func fingerprintLength() {
     let tree = AXNodeBuilder.button("Test", at: (100, 200))
     let fp = Fingerprinter.fingerprint(tree)
 
-    #expect(fp.count == 16)
-    // All hex characters
+    #expect(fp.count == 32)
     #expect(fp.allSatisfy { $0.isHexDigit })
+  }
+
+  @Test("shortFingerprint(from:) returns first 8 chars of a full fingerprint string")
+  func shortFingerprintFromString() {
+    let full = "abcdef1234567890abcdef1234567890"
+    let short = Fingerprinter.shortFingerprint(from: full)
+    #expect(short == "abcdef12")
   }
 }

@@ -69,11 +69,7 @@ struct Tap: AsyncParsableCommand {
     if describe {
       try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
       if let descNode = try? await AXTreeReader.readDeviceTree(simulatorUDID: device.udid) {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        if let data = try? encoder.encode(descNode) {
-          print(String(data: data, encoding: .utf8) ?? "{}")
-        }
+        JSONOutput.print(descNode)
       }
     }
   }

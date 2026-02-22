@@ -123,7 +123,7 @@ struct Network: AsyncParsableCommand {
     result: NetworkLogParser.ParseResult,
     queryFailed: Bool
   ) {
-    let output = JSONOutput(
+    let output = NetworkJSONOutput(
       diagnosticsEnabled: result.diagnosticsEnabled,
       queryFailed: queryFailed,
       timeWindowSeconds: last,
@@ -133,11 +133,7 @@ struct Network: AsyncParsableCommand {
       rawEntries: result.diagnosticsEnabled ? [] : result.rawEntries
     )
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(output) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
+    JSONOutput.print(output)
   }
 
   // MARK: - Helpers
@@ -154,7 +150,7 @@ struct Network: AsyncParsableCommand {
 
 // MARK: - JSON Model
 
-private struct JSONOutput: Encodable {
+private struct NetworkJSONOutput: Encodable {
   let diagnosticsEnabled: Bool
   let queryFailed: Bool
   let timeWindowSeconds: Int

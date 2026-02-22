@@ -128,4 +128,36 @@ struct AXNodeTests {
     let node = AXNodeBuilder.node(role: "AXButton")
     #expect(node.displayName == "AXButton")
   }
+
+  // MARK: - flattened()
+
+  @Test("flattened returns self when node has no children")
+  func flattenedLeaf() {
+    let node = AXNodeBuilder.button("OK", at: (100, 200))
+    #expect(node.flattened().count == 1)
+  }
+
+  @Test("flattened returns all descendants in order")
+  func flattenedTree() {
+    let tree = AXNodeBuilder.node(
+      role: "AXGroup",
+      children: [
+        AXNodeBuilder.button("A", at: (50, 50)),
+        AXNodeBuilder.node(
+          role: "AXGroup",
+          children: [
+            AXNodeBuilder.button("B", at: (100, 100)),
+            AXNodeBuilder.text("C", at: (150, 150)),
+          ]
+        ),
+      ]
+    )
+    let flat = tree.flattened()
+    #expect(flat.count == 5) // root + A + group + B + C
+    #expect(flat[0].role == "AXGroup")
+    #expect(flat[1].displayName == "A")
+    #expect(flat[2].role == "AXGroup")
+    #expect(flat[3].displayName == "B")
+    #expect(flat[4].displayName == "C")
+  }
 }

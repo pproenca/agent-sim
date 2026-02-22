@@ -6,8 +6,7 @@ import Foundation
 enum Fingerprinter {
 
   static func fingerprint(_ tree: AXNode) -> String {
-    let flat = flatten(tree)
-    let lines = flat
+    let lines = tree.flattened()
       .filter { !$0.displayName.isEmpty && $0.frame.width > 0 }
       .map { node in
         let x = Int(node.frame.x)
@@ -19,23 +18,20 @@ enum Fingerprinter {
       .sorted()
 
     let joined = lines.joined(separator: "\n")
-    return sha256(joined).prefix(16).lowercased()
+    return String(sha256(joined).prefix(32)).lowercased()
   }
 
-  /// Short fingerprint for display (first 8 chars).
+  /// Short fingerprint for display (first 8 chars of tree fingerprint).
   static func shortFingerprint(_ tree: AXNode) -> String {
     String(fingerprint(tree).prefix(8))
   }
 
-  // MARK: - Private
-
-  private static func flatten(_ node: AXNode) -> [AXNode] {
-    var result = [node]
-    for child in node.children {
-      result.append(contentsOf: flatten(child))
-    }
-    return result
+  /// Short fingerprint from a pre-computed full fingerprint string (first 8 chars).
+  static func shortFingerprint(from fullFingerprint: String) -> String {
+    String(fullFingerprint.prefix(8))
   }
+
+  // MARK: - Private
 
   private static func sha256(_ string: String) -> String {
     let data = Data(string.utf8)

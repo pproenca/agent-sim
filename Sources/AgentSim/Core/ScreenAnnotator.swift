@@ -162,63 +162,27 @@ enum ScreenAnnotator {
       box += 1
     }
 
-    for nav in analysis.navigation {
-      elements.append(AnnotatedElement(
-        box: box,
-        frame: CGRect(
-          x: Double(nav.tapX) - Double(nav.width) / 2,
-          y: Double(nav.tapY) - Double(nav.height) / 2,
-          width: Double(nav.width),
-          height: Double(nav.height)
-        ),
-        label: nav.name
-      ))
-      box += 1
-    }
-
-    for action in analysis.actions {
-      elements.append(AnnotatedElement(
-        box: box,
-        frame: CGRect(
-          x: Double(action.tapX) - Double(action.width) / 2,
-          y: Double(action.tapY) - Double(action.height) / 2,
-          width: Double(action.width),
-          height: Double(action.height)
-        ),
-        label: action.name
-      ))
-      box += 1
-    }
-
-    for el in analysis.destructive {
-      elements.append(AnnotatedElement(
-        box: box,
-        frame: CGRect(
-          x: Double(el.tapX) - Double(el.width) / 2,
-          y: Double(el.tapY) - Double(el.height) / 2,
-          width: Double(el.width),
-          height: Double(el.height)
-        ),
-        label: el.name
-      ))
-      box += 1
-    }
-
-    for el in analysis.disabled {
-      elements.append(AnnotatedElement(
-        box: box,
-        frame: CGRect(
-          x: Double(el.tapX) - Double(el.width) / 2,
-          y: Double(el.tapY) - Double(el.height) / 2,
-          width: Double(el.width),
-          height: Double(el.height)
-        ),
-        label: el.name
-      ))
+    for el in analysis.navigation + analysis.actions + analysis.destructive + analysis.disabled {
+      elements.append(annotatedElement(from: el, box: box))
       box += 1
     }
 
     return elements
+  }
+
+  private static func annotatedElement(
+    from el: ScreenAnalysis.ClassifiedElement, box: Int
+  ) -> AnnotatedElement {
+    AnnotatedElement(
+      box: box,
+      frame: CGRect(
+        x: Double(el.tapX) - Double(el.width) / 2,
+        y: Double(el.tapY) - Double(el.height) / 2,
+        width: Double(el.width),
+        height: Double(el.height)
+      ),
+      label: el.name
+    )
   }
 
   // MARK: - State Persistence

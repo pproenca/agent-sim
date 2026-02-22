@@ -156,51 +156,20 @@ struct JournalSummary: ParsableCommand {
       throw JournalError.fileNotFound(path)
     }
 
-    let content = try String(contentsOfFile: path, encoding: .utf8)
-    let lines = content.components(separatedBy: "\n")
-
-    var totalActions = 0
-    var navigated = 0
-    var sameScreen = 0
-    var crashes = 0
-    var issues = 0
-    var screens = Set<String>()
-
-    for line in lines {
-      let trimmed = line.trimmingCharacters(in: .whitespaces)
-      if trimmed.hasPrefix("### #") {
-        totalActions += 1
-      }
-      if trimmed.hasPrefix("- **Result**:") {
-        let result = trimmed.replacingOccurrences(of: "- **Result**: ", with: "").lowercased()
-        if result.contains("navigated") { navigated += 1 }
-        else if result.contains("same") { sameScreen += 1 }
-        else if result.contains("crash") { crashes += 1 }
-      }
-      if trimmed.hasPrefix("- **Issue**:") {
-        issues += 1
-      }
-      if trimmed.hasPrefix("- **Screen before**:") || trimmed.hasPrefix("- **Screen after**:") {
-        let hash = trimmed.components(separatedBy: ": ").dropFirst().first?
-          .components(separatedBy: " ").first ?? ""
-        if !hash.isEmpty { screens.insert(hash) }
-      }
+    guard let state = SweepStateReader.readJournal(at: path) else {
+      throw JournalError.fileNotFound(path)
     }
 
     let summary = JournalSummaryOutput(
-      totalActions: totalActions,
-      navigations: navigated,
-      sameScreen: sameScreen,
-      crashes: crashes,
-      issues: issues,
-      uniqueScreens: screens.count
+      totalActions: state.totalActions,
+      navigations: state.navigations,
+      sameScreen: state.sameScreen,
+      crashes: state.crashes,
+      issues: state.issues,
+      uniqueScreens: state.screens.count
     )
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    if let data = try? encoder.encode(summary) {
-      print(String(data: data, encoding: .utf8) ?? "{}")
-    }
+    JSONOutput.print(summary)
   }
 }
 

@@ -1,3 +1,4 @@
+import ArgumentParser
 @preconcurrency import FBControlCore
 import FBSimulatorControl
 import Foundation
@@ -117,10 +118,14 @@ enum SimulatorBridge {
     try await HIDInteractor.type(text, simulatorID: simulatorID)
   }
 
-  enum SwipeDirection: String, Sendable {
+  enum SwipeDirection: String, Sendable, CaseIterable, ExpressibleByArgument {
     case up, down, left, right
 
-    func coordinates(delta: Int, screenWidth: Int = 393, screenHeight: Int = 852) -> (Int, Int, Int, Int) {
+    func coordinates(
+      delta: Int,
+      screenWidth: Int = DeviceConstants.defaultWidth,
+      screenHeight: Int = DeviceConstants.defaultHeight
+    ) -> (Int, Int, Int, Int) {
       let cx = screenWidth / 2
       let cy = screenHeight / 2
       switch self {
@@ -167,29 +172,20 @@ enum SimulatorBridge {
   // MARK: - Internal
 
   private static func resolveSimulator(udid: String) async throws -> FBSimulator {
-    let set = try await simulatorSet()
-    guard let simulator = set.allSimulators.first(where: { $0.udid == udid }) else {
-      throw SimError.commandFailed("Simulator \(udid) not found", 1)
-    }
-    guard simulator.state == .booted else {
-      throw SimError.commandFailed("Simulator \(udid) is not booted", 1)
-    }
-    return simulator
+    try await HIDInteractor.ensureSetUp()
+    return try SimulatorControlFactory.resolveSimulator(udid: udid)
   }
 
   private static func simulatorSet() async throws -> FBSimulatorSet {
     try await HIDInteractor.ensureSetUp()
-    let logger = FBControlCoreLoggerFactory.systemLoggerWriting(toStderr: false, withDebugLogging: false)
-    let reporter = FBEmptyEventReporter.shared
-    let config = FBSimulatorControlConfiguration(deviceSetPath: nil, logger: logger, reporter: reporter)
-    return try FBSimulatorControl.withConfiguration(config).set
+    return try SimulatorControlFactory.makeControl().set
   }
 
   /// Compute screen size in points from FBSimulator's screenInfo.
   /// Falls back to 393x852 (iPhone 16) if screenInfo is unavailable.
   private static func screenSizePoints(from simulator: FBSimulator) -> (Double, Double) {
     guard let info = simulator.screenInfo, info.scale > 0 else {
-      return (393, 852)
+      return (Double(DeviceConstants.defaultWidth), Double(DeviceConstants.defaultHeight))
     }
     return (Double(info.widthPixels) / Double(info.scale), Double(info.heightPixels) / Double(info.scale))
   }

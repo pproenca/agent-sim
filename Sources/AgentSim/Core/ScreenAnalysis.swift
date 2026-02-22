@@ -71,7 +71,7 @@ enum ScreenAnalyzer {
   static func analyze(_ tree: AXNode) -> ScreenAnalysis {
     let fingerprint = Fingerprinter.fingerprint(tree)
     let screenName = inferScreenName(tree)
-    let allElements = flatten(tree)
+    let allElements = tree.flattened()
     let interactive = allElements.filter(\.isInteractive)
 
     let tabs = extractTabs(tree)
@@ -131,8 +131,9 @@ enum ScreenAnalyzer {
 
   private static func isNavigation(_ el: AXNode) -> Bool {
     let name = el.displayName.lowercased()
-    // Top-of-screen buttons (y < 100) with navigation labels
-    if el.frame.centerY < 100 && navigationLabels.contains(where: { name.contains($0) }) {
+    if el.frame.centerY < DeviceConstants.navigationBarMaxY
+      && navigationLabels.contains(where: { name.contains($0) })
+    {
       return true
     }
     return false
@@ -187,8 +188,7 @@ enum ScreenAnalyzer {
     var suggestions: [ScreenAnalysis.SuggestedAction] = []
     var priority = 1
 
-    // Suggest scrolling if there might be off-screen content
-    if tree.frame.height > 900 {
+    if tree.frame.height > DeviceConstants.scrollableContentThreshold {
       suggestions.append(.init(
         priority: priority, action: "scroll-down", target: "screen",
         reason: "Screen may have off-screen content below the fold",
@@ -230,7 +230,7 @@ enum ScreenAnalyzer {
 
   private static func inferScreenName(_ tree: AXNode) -> String {
     // Look for navigation title (AXStaticText with large font near top)
-    let flat = flatten(tree)
+    let flat = tree.flattened()
 
     // Strategy 1: Find a prominent text element near the top of the screen
     let topTexts = flat
@@ -253,13 +253,4 @@ enum ScreenAnalyzer {
     return "Unknown Screen"
   }
 
-  // MARK: - Helpers
-
-  private static func flatten(_ node: AXNode) -> [AXNode] {
-    var result = [node]
-    for child in node.children {
-      result.append(contentsOf: flatten(child))
-    }
-    return result
-  }
 }

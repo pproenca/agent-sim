@@ -28,10 +28,19 @@ struct NextInstruction: Encodable {
   let afterAction: [String]
   let guardrails: [String]
 
+  enum ActionType: String, Encodable, Sendable {
+    case tap
+    case swipe
+    case back
+    case journalInit = "journal-init"
+    case launch
+    case recover
+  }
+
   struct SuggestedNextAction: Encodable {
-    let type: String          // "tap", "swipe", "back", "journal-init", "launch", "recover"
-    let target: String        // element name or description
-    let command: String       // exact CLI command to run
+    let type: ActionType
+    let target: String
+    let command: String
     let reason: String
     let tapX: Int?
     let tapY: Int?
@@ -112,7 +121,10 @@ enum SweepStateReader {
 
       if trimmed.hasPrefix("- **Screen before**:") {
         let hash = extractFingerprint(trimmed)
-        if let hash { currentBeforeFingerprint = hash }
+        if let hash {
+          currentBeforeFingerprint = hash
+          screens.insert(hash)
+        }
       }
 
       if trimmed.hasPrefix("- **Screen after**:") {
@@ -131,11 +143,6 @@ enum SweepStateReader {
         if let before = currentBeforeFingerprint, let target = currentTarget {
           tappedElements.insert("\(before):\(target)")
         }
-      }
-
-      if trimmed.hasPrefix("- **Screen before**:") {
-        let hash = extractFingerprint(trimmed)
-        if let hash { screens.insert(hash) }
       }
     }
 
