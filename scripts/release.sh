@@ -34,15 +34,20 @@ NEW_TAG="v${NEW_VERSION}"
 echo "Releasing: ${LATEST_TAG} → ${NEW_TAG} (${BUMP})"
 echo ""
 
-# --- Sync plugin.json version ---
+# --- Sync versions ---
 PLUGIN_JSON="$ROOT/.claude-plugin/plugin.json"
+AGENT_SIM_SWIFT="$ROOT/Sources/AgentSim/AgentSim.swift"
+
 if [[ -f "$PLUGIN_JSON" ]]; then
-  # Update version in plugin.json to match the new tag
   sed -i '' -E "s/\"version\": *\"[^\"]+\"/\"version\": \"${NEW_VERSION}\"/" "$PLUGIN_JSON"
-  if ! git diff --quiet "$PLUGIN_JSON"; then
-    git add "$PLUGIN_JSON"
-    git commit -m "Sync plugin.json version to ${NEW_TAG}"
-  fi
+fi
+if [[ -f "$AGENT_SIM_SWIFT" ]]; then
+  sed -i '' -E "s/version: \"[^\"]+\"/version: \"${NEW_VERSION}\"/" "$AGENT_SIM_SWIFT"
+fi
+
+if ! git diff --quiet "$PLUGIN_JSON" "$AGENT_SIM_SWIFT" 2>/dev/null; then
+  git add "$PLUGIN_JSON" "$AGENT_SIM_SWIFT"
+  git commit -m "Sync version to ${NEW_TAG}"
 fi
 
 # --- Preflight checks ---
