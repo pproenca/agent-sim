@@ -25,6 +25,10 @@ from memory. Every AgentSim command follows this principle:
 
 | Need | AgentSim command | NEVER use |
 |------|-----------------|-----------|
+| Boot a simulator | `agent-sim boot "iPhone 16"` | ~~open -a Simulator~~ ~~xcrun simctl boot~~ |
+| Install an app | `agent-sim install path/to/App.app` | ~~xcrun simctl install~~ |
+| Find bundle IDs | `agent-sim apps --pretty` | ~~manual Info.plist parsing~~ |
+| Wait for readiness | `agent-sim wait` | ~~sleep 2~~ |
 | See what's on screen | `agent-sim explore` or `agent-sim describe` | ~~XcodeBuildMCP snapshot_ui~~ |
 | See + annotated screenshot | `agent-sim explore --annotate` | ~~XcodeBuildMCP screenshot~~ |
 | Tap an element | `agent-sim tap --box N` or `agent-sim tap --label "X"` | ~~XcodeBuildMCP tap~~ ~~xcrun simctl~~ |
@@ -122,15 +126,22 @@ Every response includes:
 ## Cold Start (First Run)
 
 ```bash
-# 1. Ask what to do
+# 1. Boot a simulator (waits until fully usable — no sleep needed)
+agent-sim boot "iPhone 16"
+
+# 2. Install the app (returns the bundle ID)
+agent-sim install path/to/MyApp.app
+
+# 3. Ask what to do — the state machine takes over
 agent-sim next
 
 # Response: phase="not_started", action.command="agent-sim journal init ..."
-# 2. Copy-paste the command and afterAction steps:
+# 4. Copy-paste the action.command and afterAction steps:
 agent-sim journal init --path build/agent-sim/sweep-journal.md --simulator "iPhone 16" --scope "Full app exploration"
-agent-sim launch com.maddie.appnative
-sleep 2
-agent-sim explore --annotate --pretty
+agent-sim boot
+agent-sim launch com.example.myapp
+agent-sim wait --timeout 10
+agent-sim explore --pretty
 agent-sim next --journal build/agent-sim/sweep-journal.md
 
 # Now you're in the loop.
@@ -208,6 +219,15 @@ Assert returns exit code 0 on pass, 1 on fail. JSON output includes all assertio
 
 ## Commands Reference
 
+### Setup (cold start)
+| Command | Use when |
+|---------|----------|
+| `boot [name]` | Need to boot a simulator. Waits until usable. |
+| `boot --list` | Need to see available (shutdown) simulators. |
+| `install <path>` | Need to install a .app or .ipa. Returns bundle ID. |
+| `apps [--pretty]` | Need to find installed bundle IDs. |
+| `wait [--timeout N]` | Need to wait for the screen to be ready. Replaces `sleep`. |
+
 ### Observation (read-only)
 | Command | Use when | Output contains next command? |
 |---------|----------|------|
@@ -247,7 +267,7 @@ Assert returns exit code 0 on pass, 1 on fail. JSON output includes all assertio
 | Command | Use when |
 |---------|----------|
 | `journal init --path <path>` | Starting a new sweep |
-| `journal log --path <path> ...` | Recording an action |
+| `journal log --path <path> ... --auto-after` | Recording an action (auto-detects after-state) |
 | `journal summary --path <path>` | Getting sweep stats |
 
 ## Network Debugging
@@ -299,7 +319,7 @@ These apply to every sweep. Violating them causes incorrect results.
 4. **Fingerprint after every action** — this is how you detect screen transitions.
 5. **Skip destructive elements** — Delete, Sign Out, Remove, etc. These kill the session.
 6. **Do not type into text fields** — focus on tap interactions during exploration.
-7. **Wait after tapping** — `sleep 1` before observing. UI needs time to settle.
+7. **Wait after tapping** — use `agent-sim wait --timeout 5` before observing. Never use `sleep`.
 8. **Dismiss modals before continuing** — sheets, alerts, and popovers must be closed before returning to parent screen traversal.
 9. **If the app crashes, recover first** — log the crash, screenshot, relaunch, verify the screen, then continue.
 10. **Scroll before declaring a screen exhausted** — `agent-sim swipe up` to check for off-screen content.

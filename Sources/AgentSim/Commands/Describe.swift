@@ -101,10 +101,10 @@ private struct InteractiveElement: Encodable {
 
 // MARK: - Errors
 
-enum DescribeError: Error, CustomStringConvertible {
+enum DescribeError: Error, LocalizedError {
   case noScreenContent
 
-  var description: String {
+  var errorDescription: String? {
     switch self {
     case .noScreenContent:
       "Could not find iOS app content in the Simulator's accessibility tree."

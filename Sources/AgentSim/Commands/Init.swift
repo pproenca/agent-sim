@@ -317,10 +317,10 @@ struct Init: ParsableCommand {
 
 // MARK: - Errors
 
-enum InitError: Error, CustomStringConvertible {
+enum InitError: Error, LocalizedError {
   case invalidScope(String)
 
-  var description: String {
+  var errorDescription: String? {
     switch self {
     case .invalidScope(let scope):
       "Invalid scope '\(scope)'. Use 'project' or 'user'."

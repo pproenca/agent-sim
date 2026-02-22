@@ -9,6 +9,10 @@ public struct AgentSim: AsyncParsableCommand {
     version: "0.3.0",
     subcommands: [
       Init.self,
+      Boot.self,
+      AppInstall.self,
+      Apps.self,
+      Wait.self,
       Use.self,
       ConfigCmd.self,
       Next.self,

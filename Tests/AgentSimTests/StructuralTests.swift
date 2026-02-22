@@ -138,24 +138,24 @@ struct StructuralTests {
   @Test("All error types produce non-empty descriptions")
   func errorDescriptions() {
     let simError = SimulatorBridge.SimError.commandFailed("test", 1)
-    #expect(!simError.description.isEmpty)
+    #expect(!simError.localizedDescription.isEmpty)
 
     let tapNotFound = TapError.elementNotFound("Button", available: "A, B")
-    #expect(!tapNotFound.description.isEmpty)
-    #expect(tapNotFound.description.contains("Button"))
+    #expect(!tapNotFound.localizedDescription.isEmpty)
+    #expect(tapNotFound.localizedDescription.contains("Button"))
 
     let tapNoBox = TapError.noBoxMapping
-    #expect(!tapNoBox.description.isEmpty)
+    #expect(!tapNoBox.localizedDescription.isEmpty)
 
     let tapBoxNotFound = TapError.boxNotFound(5, available: "#1, #2")
-    #expect(!tapBoxNotFound.description.isEmpty)
-    #expect(tapBoxNotFound.description.contains("5"))
+    #expect(!tapBoxNotFound.localizedDescription.isEmpty)
+    #expect(tapBoxNotFound.localizedDescription.contains("5"))
 
     let journalNotFound = JournalError.fileNotFound("/tmp/test.md")
-    #expect(!journalNotFound.description.isEmpty)
-    #expect(journalNotFound.description.contains("/tmp/test.md"))
+    #expect(!journalNotFound.localizedDescription.isEmpty)
+    #expect(journalNotFound.localizedDescription.contains("/tmp/test.md"))
 
     let noSim = DeviceResolutionError.noSimulator
-    #expect(!noSim.description.isEmpty)
+    #expect(!noSim.localizedDescription.isEmpty)
   }
 }

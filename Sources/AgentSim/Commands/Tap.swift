@@ -114,17 +114,17 @@ struct Tap: AsyncParsableCommand {
   }
 }
 
-enum TapError: Error, CustomStringConvertible {
+enum TapError: Error, LocalizedError {
   case elementNotFound(String, available: String)
   case noBoxMapping
   case boxNotFound(Int, available: String)
 
-  var description: String {
+  var errorDescription: String? {
     switch self {
     case .elementNotFound(let target, let available):
       "Element not found: \"\(target)\". Available: \(available)"
     case .noBoxMapping:
-      "No box mapping found. Run `explore --screenshot <path> --annotate` first."
+      "No box mapping found. Run `explore --annotate` first."
     case .boxNotFound(let box, let available):
       "Box #\(box) not found. Available: \(available)"
     }

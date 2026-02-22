@@ -65,7 +65,7 @@ struct JournalInit: ParsableCommand {
 
 // MARK: - Log
 
-struct JournalLog: ParsableCommand {
+struct JournalLog: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "log",
     abstract: "Append an action entry to a sweep journal."
@@ -99,7 +99,10 @@ struct JournalLog: ParsableCommand {
   var afterName: String = ""
 
   @Option(name: .long, help: "Result: navigated, same-screen, crash, error.")
-  var result: String
+  var result: String?
+
+  @Flag(name: .long, help: "Auto-detect after-state by reading the current screen. Fills --after, --after-name, and --result automatically.")
+  var autoAfter = false
 
   @Option(name: .long, help: "Path to screenshot taken.")
   var screenshot: String?
@@ -107,9 +110,32 @@ struct JournalLog: ParsableCommand {
   @Option(name: .long, help: "Any issue or anomaly detected.")
   var issue: String?
 
-  func run() throws {
+  func run() async throws {
     guard FileManager.default.fileExists(atPath: path) else {
       throw JournalError.fileNotFound(path)
+    }
+
+    // Resolve after-state automatically if --auto-after
+    var resolvedAfter = after
+    var resolvedAfterName = afterName
+    var resolvedResult = result ?? "same-screen"
+
+    if autoAfter {
+      if let device = try? await SimulatorBridge.resolveDevice(),
+         let tree = try? await AXTreeReader.readDeviceTree(simulatorUDID: device.udid) {
+        let analysis = ScreenAnalyzer.analyze(tree)
+        let currentFP = Fingerprinter.shortFingerprint(from: analysis.fingerprint)
+        resolvedAfter = currentFP
+        resolvedAfterName = analysis.screenName
+
+        // Determine result by comparing with before fingerprint
+        if !before.isEmpty {
+          resolvedResult = (currentFP == before) ? "same-screen" : "navigated"
+        }
+      } else {
+        resolvedResult = result ?? "error"
+        resolvedAfterName = "unknown"
+      }
     }
 
     var entry = """
@@ -126,10 +152,10 @@ struct JournalLog: ParsableCommand {
       entry += "\n- **Screen before**: \(Self.buildScreenLine(prefix: "before", hash: before, name: beforeName))"
     }
 
-    entry += "\n- **Result**: \(result)"
+    entry += "\n- **Result**: \(resolvedResult)"
 
-    if !after.isEmpty {
-      entry += "\n- **Screen after**: \(Self.buildScreenLine(prefix: "after", hash: after, name: afterName))"
+    if !resolvedAfter.isEmpty {
+      entry += "\n- **Screen after**: \(Self.buildScreenLine(prefix: "after", hash: resolvedAfter, name: resolvedAfterName))"
     }
     if let screenshot {
       entry += "\n- **Screenshot**: \(screenshot)"
@@ -150,7 +176,7 @@ struct JournalLog: ParsableCommand {
     let journalEntry = Self.buildJournalEntry(
       index: index, action: action, target: target,
       coords: coords, before: before, beforeName: beforeName,
-      result: result, after: after, afterName: afterName,
+      result: resolvedResult, after: resolvedAfter, afterName: resolvedAfterName,
       screenshot: screenshot, issue: issue
     )
 
@@ -248,10 +274,10 @@ private struct JournalSummaryOutput: Encodable {
 
 // MARK: - Errors
 
-enum JournalError: Error, CustomStringConvertible {
+enum JournalError: Error, LocalizedError {
   case fileNotFound(String)
 
-  var description: String {
+  var errorDescription: String? {
     switch self {
     case .fileNotFound(let path):
       "Journal file not found: \(path)"

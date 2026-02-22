@@ -233,13 +233,13 @@ enum ScreenAnnotator {
 
   // MARK: - Errors
 
-  enum AnnotatorError: Error, CustomStringConvertible {
+  enum AnnotatorError: Error, LocalizedError {
     case failedToLoadImage(String)
     case failedToCreateContext
     case failedToCreateOutput
     case failedToWriteOutput(String)
 
-    var description: String {
+    var errorDescription: String? {
       switch self {
       case .failedToLoadImage(let path): "Failed to load image: \(path)"
       case .failedToCreateContext: "Failed to create graphics context"

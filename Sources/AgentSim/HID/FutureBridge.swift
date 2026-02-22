@@ -3,9 +3,18 @@
 @preconcurrency import FBControlCore
 import Foundation
 
-enum FBFutureError: Error {
+enum FBFutureError: Error, LocalizedError {
   case continuationFulfilledWithoutValues
   case unexpectedType(expected: String, actual: String)
+
+  var errorDescription: String? {
+    switch self {
+    case .continuationFulfilledWithoutValues:
+      "FBFuture resolved without a value or error"
+    case .unexpectedType(let expected, let actual):
+      "FBFuture returned \(actual), expected \(expected)"
+    }
+  }
 }
 
 enum FutureBridge {

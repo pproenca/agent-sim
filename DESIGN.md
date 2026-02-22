@@ -80,7 +80,17 @@ See `AGENTS.md` for full agent instructions.
 
 ## CLI Commands
 
-### Instruction (start here)
+### Setup (cold start)
+
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `boot [name]` | Boot a simulator by name/UDID. Waits until usable. | JSON: udid, name, screen size |
+| `boot --list` | List available (shutdown) simulators | Text list |
+| `install <path>` | Install .app or .ipa. Returns bundle ID. | JSON: bundleID, name |
+| `apps [--running]` | List installed/running apps | JSON array |
+| `wait [--timeout N]` | Block until screen is AX-ready. Replaces `sleep`. | JSON: ready, elementCount |
+
+### Instruction (start here for sweeps)
 
 | Command | Purpose | Output |
 |---------|---------|--------|
@@ -126,51 +136,24 @@ See `AGENTS.md` for full agent instructions.
 | Command | Purpose |
 |---------|---------|
 | `journal init [--path] [--simulator] [--scope]` | Create new sweep journal |
-| `journal log [--path] --index N --action "..." --result "..."` | Append action entry |
+| `journal log [--path] --index N --action "..." --auto-after` | Append action entry (auto-detects after-state) |
 | `journal summary [--path]` | Print journal stats (JSON) |
 
 All observation commands output JSON by default (for AI agent consumption). Human-readable
 output via `--pretty` flag.
 
-## QA Cold-Start Workflow
+## Agent Workflow
 
-The intended usage pattern for an AI agent doing QA exploration:
+See [AGENTS.md](AGENTS.md) for the canonical agent workflow.
 
+The `next` command is the single entry point — agents do not manually
+orchestrate the observe/act/journal cycle. The cold-start flow:
+
+```bash
+agent-sim boot "iPhone 16"       # Boot + wait until usable
+agent-sim install path/to/App.app # Install, returns bundle ID
+agent-sim next                    # State machine takes over from here
 ```
-1. agent-sim launch <bundleId>          # Start the app
-2. agent-sim explore --pretty           # Observe: what's on screen?
-3. agent-sim journal init               # Start logging
-4. agent-sim fingerprint --hash-only    # Record initial screen identity
-
-# For each action:
-5. agent-sim tap --label "Next"         # Act
-6. agent-sim fingerprint --hash-only    # Check: did the screen change?
-7. agent-sim explore                    # Observe the new screen
-8. agent-sim assert --contains "..."    # Verify expected elements
-9. agent-sim journal log --index 1 ...  # Journal the step
-
-# After exploration:
-10. agent-sim journal summary --path ... # Get stats
-```
-
-### Cognitive Steps (what the AI agent does at each screen)
-
-1. **Observe** — `explore` to see all elements, classified by type
-2. **Plan** — Read `suggestedActions` to decide what to tap next
-3. **Act** — `tap` the chosen element
-4. **Compare** — `fingerprint` to detect if the screen changed
-5. **Verify** — `assert` to confirm expected outcome
-6. **Journal** — `journal log` to record the step and any issues
-7. **Repeat** — DFS: if new screen, recurse; if same screen, move to next element
-
-### Issue Detection
-
-The agent should flag issues when:
-- **Wrong navigation**: Tapping "Back" navigated to Home instead of parent screen
-- **Missing elements**: Expected screen content is absent (`assert --contains` fails)
-- **Crash**: `explore` returns no elements or finds SpringBoard
-- **Stuck**: Same fingerprint after tapping an interactive element
-- **Accessibility gaps**: Interactive elements with no label or identifier
 
 ## Screen Analysis Model
 

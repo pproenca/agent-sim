@@ -24,8 +24,16 @@ struct SwipeCmd: AsyncParsableCommand {
 
   func run() async throws {
     let device = try await SimulatorBridge.resolveDevice()
+    let (x1, y1, x2, y2) = direction.coordinates(
+      delta: delta,
+      screenWidth: Int(device.screenWidthPoints),
+      screenHeight: Int(device.screenHeightPoints)
+    )
 
-    try await SimulatorBridge.swipe(direction: direction, simulatorID: device.udid, duration: duration, delta: delta)
+    try await SimulatorBridge.swipe(
+      from: (x: x1, y: y1), to: (x: x2, y: y2),
+      duration: duration, simulatorID: device.udid
+    )
 
     if describe {
       try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))

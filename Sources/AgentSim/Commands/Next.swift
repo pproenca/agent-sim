@@ -153,6 +153,25 @@ struct Next: AsyncParsableCommand {
       journalPath: journalPath
     )
 
+    let actionIndex = journalState.totalActions + 1
+
+    // Helper: build afterAction with --auto-after (agent copies, never assembles)
+    func afterActionForTap(action: String, target: String, coords: String) -> [String] {
+      [
+        "agent-sim wait --timeout 5",
+        "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action \(shellEscape(action)) --target \(shellEscape(target)) --coords \(shellEscape(coords)) --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --auto-after",
+        "agent-sim next --journal \(shellEscape(journalPath))"
+      ]
+    }
+
+    func afterActionForBack(target: String) -> [String] {
+      [
+        "agent-sim wait --timeout 5",
+        "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action back --target \(shellEscape(target)) --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --auto-after",
+        "agent-sim next --journal \(shellEscape(journalPath))"
+      ]
+    }
+
     // Depth limit: only block forward navigation on new screens
     if isNewScreen && journalState.currentDepth >= maxDepth {
       return NextInstruction(
@@ -161,12 +180,7 @@ struct Next: AsyncParsableCommand {
         action: findBackAction(analysis),
         currentScreen: screenSnapshot,
         progress: progress,
-        afterAction: [
-          "sleep 1",
-          "agent-sim fingerprint --hash-only",
-          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(journalState.totalActions + 1) --action back --target 'Back navigation' --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <fingerprint> --after-name <screen-name>",
-          "agent-sim next --journal \(shellEscape(journalPath))"
-        ],
+        afterAction: afterActionForBack(target: "Back navigation"),
         guardrails: standardGuardrails
       )
     }
@@ -175,7 +189,6 @@ struct Next: AsyncParsableCommand {
     if isNewScreen && !untapped.isEmpty {
       // New screen with elements to tap
       let target = untapped[0]
-      let actionIndex = journalState.totalActions + 1
 
       return NextInstruction(
         phase: .newScreen,
@@ -190,19 +203,12 @@ struct Next: AsyncParsableCommand {
         ),
         currentScreen: screenSnapshot,
         progress: progress,
-        afterAction: [
-          "sleep 1",
-          "agent-sim fingerprint --hash-only",
-          "agent-sim explore",
-          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap --target \(shellEscape(target.name)) --coords \"\(target.tapX),\(target.tapY)\" --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
-          "agent-sim next --journal \(shellEscape(journalPath))"
-        ],
+        afterAction: afterActionForTap(action: "tap", target: target.name, coords: "\(target.tapX),\(target.tapY)"),
         guardrails: standardGuardrails
       )
     } else if !untapped.isEmpty {
       // Known screen with untapped elements
       let target = untapped[0]
-      let actionIndex = journalState.totalActions + 1
 
       return NextInstruction(
         phase: .exploring,
@@ -217,19 +223,12 @@ struct Next: AsyncParsableCommand {
         ),
         currentScreen: screenSnapshot,
         progress: progress,
-        afterAction: [
-          "sleep 1",
-          "agent-sim fingerprint --hash-only",
-          "agent-sim explore",
-          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap --target \(shellEscape(target.name)) --coords \"\(target.tapX),\(target.tapY)\" --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <new-fingerprint> --after-name <new-screen-name>",
-          "agent-sim next --journal \(shellEscape(journalPath))"
-        ],
+        afterAction: afterActionForTap(action: "tap", target: target.name, coords: "\(target.tapX),\(target.tapY)"),
         guardrails: standardGuardrails
       )
     } else {
       // Screen exhausted — navigate back
       let backAction = findBackAction(analysis)
-      let actionIndex = journalState.totalActions + 1
 
       if let back = backAction {
         return NextInstruction(
@@ -238,12 +237,7 @@ struct Next: AsyncParsableCommand {
           action: back,
           currentScreen: screenSnapshot,
           progress: progress,
-          afterAction: [
-            "sleep 1",
-            "agent-sim fingerprint --hash-only",
-            "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action back --target 'Back navigation' --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <fingerprint> --after-name <screen-name>",
-            "agent-sim next --journal \(shellEscape(journalPath))"
-          ],
+          afterAction: afterActionForBack(target: back.target),
           guardrails: standardGuardrails
         )
       } else {
@@ -263,12 +257,7 @@ struct Next: AsyncParsableCommand {
             ),
             currentScreen: screenSnapshot,
             progress: progress,
-            afterAction: [
-              "sleep 1",
-              "agent-sim explore",
-              "agent-sim journal log --path \(shellEscape(journalPath)) --index \(actionIndex) --action tap-tab --target \(shellEscape(nextTab.label)) --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result navigated --after <fingerprint> --after-name <screen-name>",
-              "agent-sim next --journal \(shellEscape(journalPath))"
-            ],
+            afterAction: afterActionForTap(action: "tap-tab", target: nextTab.label, coords: "\(nextTab.tapX),\(nextTab.tapY)"),
             guardrails: standardGuardrails
           )
         }
@@ -344,8 +333,9 @@ struct Next: AsyncParsableCommand {
       currentScreen: nil,
       progress: .init(screensVisited: 0, totalActions: 0, issuesFound: 0, crashesDetected: 0, journalPath: nil),
       afterAction: [
+        "agent-sim boot",
         "agent-sim launch \(shellEscape(bundleID ?? "<bundleId>"))",
-        "sleep 2",
+        "agent-sim wait --timeout 10",
         "agent-sim explore --pretty",
         "agent-sim next --journal \(shellEscape(defaultPath))"
       ],
@@ -377,9 +367,8 @@ struct Next: AsyncParsableCommand {
         journalPath: journalPath
       ),
       afterAction: [
-        "sleep 2",
-        "agent-sim explore --pretty",
-        "agent-sim journal log --path \(shellEscape(journalPath)) --index \(journalState.totalActions + 1) --action crash-recovery --target 'App recovery' --result <navigated|error> --issue \(shellEscape("App crashed: \(reason)"))",
+        "agent-sim wait --timeout 10",
+        "agent-sim journal log --path \(shellEscape(journalPath)) --index \(journalState.totalActions + 1) --action crash-recovery --target 'App recovery' --auto-after --issue \(shellEscape("App crashed: \(reason)"))",
         "agent-sim next --journal \(shellEscape(journalPath))"
       ],
       guardrails: crashGuardrails
@@ -427,7 +416,7 @@ struct Next: AsyncParsableCommand {
 
   private static let initGuardrails = [
     "Create the journal BEFORE launching the app.",
-    "Wait at least 2 seconds after launch before first explore.",
+    "Use `agent-sim wait` after launch — it blocks until the screen is ready.",
     "Confirm the app is on the expected entry screen before starting the sweep.",
   ]
 

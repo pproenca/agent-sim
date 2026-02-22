@@ -53,11 +53,11 @@ enum AccessibilityFetcher {
     return try JSONDecoder().decode([AccessibilityElement].self, from: jsonData)
   }
 
-  enum AccessibilityFetchError: Error, CustomStringConvertible {
+  enum AccessibilityFetchError: Error, LocalizedError {
     case simulatorNotFound(String)
     case simulatorNotBooted(String)
 
-    var description: String {
+    var errorDescription: String? {
       switch self {
       case .simulatorNotFound(let udid): "Simulator \(udid) not found"
       case .simulatorNotBooted(let udid): "Simulator \(udid) is not booted"
