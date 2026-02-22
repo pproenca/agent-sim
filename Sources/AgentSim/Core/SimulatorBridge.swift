@@ -30,11 +30,19 @@ enum SimulatorBridge {
   /// Resolve which booted simulator to use.
   ///
   /// Resolution order:
-  /// 1. `.agent-sim/device` file (written by `agent-sim use`)
+  /// 0. Explicit `udid` override (bypasses pin logic entirely)
+  /// 1. `.agent-sim/device` file (written by `agent-sim use` or `agent-sim boot`)
   /// 2. If exactly one simulator is booted, use it
   /// 3. If multiple are booted, error with `agent-sim use` hint
-  static func resolveDevice() async throws -> BootedDevice {
+  static func resolveDevice(udid override: String? = nil) async throws -> BootedDevice {
     let all = try await allBootedDevices()
+
+    if let udid = override {
+      if let match = all.first(where: { $0.udid == udid }) {
+        return match
+      }
+      throw DeviceResolutionError.deviceNotFound(udid, available: all)
+    }
 
     if let pinnedUDID = ProjectConfig.pinnedDeviceUDID() {
       if let match = all.first(where: { $0.udid == pinnedUDID }) {
@@ -194,7 +202,20 @@ enum SimulatorBridge {
       io: io,
       launchMode: .foregroundIfRunning
     )
-    _ = try await FutureBridge.value(simulator.launchApplication(config))
+    do {
+      _ = try await FutureBridge.value(simulator.launchApplication(config))
+    } catch {
+      let reason: String
+      let nsError = error as NSError
+      if nsError.domain == "FBSOpenApplicationServiceErrorDomain" && nsError.code == 1 {
+        reason = "App failed to launch. The app may need to be rebuilt for this simulator runtime."
+      } else if nsError.localizedDescription.contains("launch-failed") {
+        reason = "App process failed to start. Ensure the app is built for this simulator's architecture."
+      } else {
+        reason = nsError.localizedDescription
+      }
+      throw LaunchError.launchFailed(bundleID: bundleID, reason: reason)
+    }
   }
 
   static func terminate(simulatorID: String, bundleID: String) async throws {
@@ -328,6 +349,17 @@ enum SimulatorBridge {
       switch self {
       case .commandFailed(let cmd, let code):
         "Command failed (exit \(code)): \(cmd)"
+      }
+    }
+  }
+
+  enum LaunchError: Error, LocalizedError {
+    case launchFailed(bundleID: String, reason: String)
+
+    var errorDescription: String? {
+      switch self {
+      case .launchFailed(let bundleID, let reason):
+        "Launch failed for \(bundleID): \(reason)"
       }
     }
   }

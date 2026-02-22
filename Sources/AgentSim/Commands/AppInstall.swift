@@ -10,13 +10,16 @@ struct AppInstall: AsyncParsableCommand {
   @Argument(help: "Path to the .app bundle or .ipa file.")
   var path: String
 
+  @Option(name: .long, help: "Target a specific simulator by UDID, bypassing the device pin.")
+  var udid: String?
+
   func run() async throws {
     let resolved = (path as NSString).standardizingPath
     guard FileManager.default.fileExists(atPath: resolved) else {
       throw InstallError.fileNotFound(resolved)
     }
 
-    let device = try await SimulatorBridge.resolveDevice()
+    let device = try await SimulatorBridge.resolveDevice(udid: udid)
     let app = try await SimulatorBridge.install(
       simulatorID: device.udid, appPath: resolved
     )

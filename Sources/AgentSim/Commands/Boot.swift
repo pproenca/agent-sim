@@ -21,14 +21,18 @@ struct Boot: AsyncParsableCommand {
       return
     }
 
+    let device: SimulatorBridge.BootedDevice
     if let udid {
       try await SimulatorBridge.boot(udid: udid)
-      let device = try await SimulatorBridge.resolveDevice()
-      printBooted(device)
+      device = try await SimulatorBridge.resolveDevice()
     } else {
-      let device = try await SimulatorBridge.bootByName(name)
-      printBooted(device)
+      device = try await SimulatorBridge.bootByName(name)
     }
+
+    try ProjectConfig.pinDevice(device.udid)
+    let shortUDID = String(device.udid.prefix(8))
+    fputs("Pinned to \(device.name) (\(shortUDID))\n", stderr)
+    printBooted(device)
   }
 
   private func listShutdown() async throws {

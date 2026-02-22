@@ -36,20 +36,35 @@ enum SimulatorControlFactory {
   }
 
   /// Find a shutdown simulator by name (or first available if name is nil).
+  ///
+  /// Match priority: exact name → shortest substring match.
+  /// Warns to stderr when falling back to a fuzzy (substring) match.
   static func findShutdownSimulator(name: String?) throws -> FBSimulator {
     let controlSet = try makeControl()
     let shutdown = controlSet.set.allSimulators.filter { $0.state == .shutdown }
 
     if let name {
-      guard let match = shutdown.first(where: {
-        $0.name.localizedCaseInsensitiveContains(name)
-      }) else {
-        let available = shutdown.map(\.name).joined(separator: ", ")
-        throw SimulatorBridge.SimError.commandFailed(
-          "No shutdown simulator matching '\(name)'. Available: \(available)", 1
-        )
+      // 1. Exact name match (case-insensitive)
+      if let exact = shutdown.first(where: {
+        $0.name.caseInsensitiveCompare(name) == .orderedSame
+      }) {
+        return exact
       }
-      return match
+
+      // 2. Substring match — prefer shortest name (most specific)
+      let fuzzy = shutdown
+        .filter { $0.name.localizedCaseInsensitiveContains(name) }
+        .sorted { $0.name.count < $1.name.count }
+
+      if let best = fuzzy.first {
+        fputs("Note: No exact match for '\(name)'. Using '\(best.name)'.\n", stderr)
+        return best
+      }
+
+      let available = shutdown.map(\.name).joined(separator: ", ")
+      throw SimulatorBridge.SimError.commandFailed(
+        "No shutdown simulator matching '\(name)'. Available: \(available)", 1
+      )
     }
 
     guard let first = shutdown.first else {
