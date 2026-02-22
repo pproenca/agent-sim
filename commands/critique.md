@@ -24,7 +24,48 @@ Derived paths (use these throughout):
 - HIG Index: `$ROOT/references/hig/INDEX.md`
 - HIG files: `$ROOT/references/hig/`
 - Template: `$ROOT/Templates/design-critique.md`
+- Project context file: `$ROOT/.agent-sim/project.md`
 - Output: `$JOURNALS/design-critique-$(date +%Y%m%d-%H%M%S).md`
+
+---
+
+## Phase 0 — Project Context
+
+**Complete this phase before any `explore`, `screenshot`, or HIG doc calls.** A principal designer never critiques a screen without understanding the product first.
+
+### Path A — `$ROOT/.agent-sim/project.md` exists
+
+1. Read `$ROOT/.agent-sim/project.md` and load the project context (App, User, Stage, Aspiration, Brand voice).
+2. Ask the user: **"What is THIS screen's job? What should the user do or understand here?"**
+3. Proceed to Phase 1 with both the persisted project context and the screen job.
+
+### Path B — `$ROOT/.agent-sim/project.md` does not exist
+
+1. Tell the user: "Before I critique, I need to understand your product — the way a principal designer would before forming any opinion."
+2. Ask these 5 questions (together or one at a time — match the user's pace):
+   1. **What is this app?** (name + one sentence)
+   2. **Who is the primary user?** (persona + context of use — who they are, when/where they use it, what they need)
+   3. **What stage is this product?** (MVP / v1 / growth / redesign)
+   4. **What shipped app do you wish yours felt like, and why?**
+   5. **Brand personality in 3 words**
+3. Save the answers to `$ROOT/.agent-sim/project.md` in this exact format:
+
+   ```markdown
+   # Project Context
+
+   **App**: {name} — {one-sentence purpose}
+   **User**: {primary persona — who, when/where, what they need}
+   **Stage**: {MVP | v1 | growth | redesign}
+   **Aspiration**: {app name — why}
+   **Brand voice**: {3 words}
+   ```
+
+   If the user skips or can't answer a question, write `(not provided)` for that field — never leave placeholder braces.
+
+4. Then ask the per-screen question: **"What is THIS screen's job? What should the user do or understand here?"**
+5. Proceed to Phase 1.
+
+**Do not assume the screen job** — even if you can see it's a login screen, ask. The user might say "it's not just login, it's the first thing new users see after downloading — it needs to convince them to create an account."
 
 ---
 
@@ -59,19 +100,27 @@ Derived paths (use these throughout):
 
 3. **Write your first impression to a scratch file**
 
-   Before any HIG analysis, write your raw reaction. Save it so it survives context growth:
+   Before any HIG analysis, write your raw reaction. Frame it for the persona and screen job from Phase 0. Save it so it survives context growth:
 
    ```bash
    cat > "$JOURNALS/critique-scratch.md" << 'SCRATCH'
    ## First Impression
 
+   **For a** {persona from project.md} **trying to** {screen job from Phase 0}:
+
    **In 3 seconds, this screen says**: <one sentence>
    **It makes me feel**: <one word, then why>
-   **What I expected but didn't find**: <what's absent>
+   **What I expected but didn't find**: <what's absent, given the screen's job>
    **Boldness**: <TIMID | SAFE | COMPETENT | CONFIDENT | BRAVE>
    **Why**: <one sentence>
    SCRATCH
    ```
+
+   Boldness calibration by stage:
+   - **MVP**: SAFE is acceptable — the product is finding its footing. TIMID is still a problem.
+   - **v1**: COMPETENT is the baseline. SAFE means you're not pushing hard enough for a shipped product.
+   - **Growth**: CONFIDENT is expected — you have users, you know what works, commit to it.
+   - **Redesign**: BRAVE or bust — if you're redesigning and still playing it safe, why redesign?
 
 4. **Classify what you observed — once**
 
@@ -126,7 +175,7 @@ Load HIG docs and critique each dimension. The key discipline: **find connection
    > "Exact quote from a loaded file"
    > — `filename.md`, section name
 
-   **The gap**: How the observation violates the principle. One sentence.
+   **The gap**: How the observation violates the principle — and what it costs the persona. Not "the button weight is wrong" but "the CTA disappears against the background, so a {persona} looking to {screen job} has to hunt for how to proceed." One sentence.
 
    **NEVER**: The anti-pattern on THIS screen.
    **INSTEAD**: The fix for THIS screen, with SwiftUI code:
@@ -134,7 +183,7 @@ Load HIG docs and critique each dimension. The key discipline: **find connection
    // 1-3 lines showing the modifier, view, or pattern
    ```
 
-   **Connects to**: If this finding amplifies or tensions with another dimension you've already critiqued, say so. This is where compound insights emerge. Leave blank if no connection yet — but revisit earlier dimensions when you find one later.
+   **Connects to**: If this finding amplifies or tensions with another dimension you've already critiqued, say so. Reference the persona's experience, not abstract design theory. Leave blank if no connection yet — but revisit earlier dimensions when you find one later.
 
    **Skip any dimension where you can't find a citeable HIG quote that's genuinely relevant.** Don't force it.
 
@@ -146,15 +195,15 @@ By now you have dimensional critiques with "Connects to" links between them. Syn
 
 1. **Name the compound problem**
 
-   What underlying issue do multiple dimensions point to? This should be a single sentence that reframes the screen's fundamental weakness. Reference at least 2 dimensions.
+   What underlying issue do multiple dimensions point to? Frame it as what the persona experiences — e.g., "a first-time pet owner can't find the primary action because the CTA, helper text, and navigation all fight for the same visual level" not "the visual hierarchy is flat." Reference at least 2 dimensions and the persona/screen job from Phase 0.
 
 2. **Name the single highest-leverage change**
 
-   One concrete, implementable change that addresses the compound problem. Include SwiftUI direction. Not "improve the hierarchy" — describe exactly what changes and why it cascades.
+   One concrete, implementable change that addresses the compound problem. Include SwiftUI direction. Not "improve the hierarchy" — describe exactly what changes and why it unblocks the persona from completing the screen's job.
 
 3. **Ground the aspiration in reality**
 
-   Name a specific, shipped app (ideally an ADA winner) that solves a similar design problem well. Describe what they do and what principle it demonstrates. This replaces vague "award-winner move" fantasies with something the developer can actually go look at.
+   Name one real, shipped app that solves this class of problem well. If the user's aspiration from `project.md` is relevant to this specific problem, use that app. Otherwise pick the most instructive example (ideally an ADA winner). Describe what they do and what principle it demonstrates. One app, one reference — not two.
 
 ---
 
@@ -166,6 +215,7 @@ By now you have dimensional critiques with "Connects to" links between them. Syn
 
 2. **Assemble the critique**
 
+   - **Project Context**: App, User, Stage, Aspiration, Brand voice from `project.md` + this screen's job from Phase 0
    - **First Impression**: Read back `$JOURNALS/critique-scratch.md`
    - **Critique**: Your dimensional critiques from Phase 2 (2-5 dimensions with "Connects to" links)
    - **What This Screen Is Missing**: Your compound problem, single change, and real-app reference from Phase 3
@@ -195,7 +245,8 @@ By now you have dimensional critiques with "Connects to" links between them. Syn
    ## Design Critique Complete
 
    **Screen**: <name>
-   **Boldness**: <rating>
+   **For**: <persona> — <screen job>
+   **Boldness**: <rating> (expected for <stage>: <expected rating>)
    **The compound problem**: <one sentence>
 
    ### Recommendations (ranked by impact)
@@ -218,13 +269,18 @@ By now you have dimensional critiques with "Connects to" links between them. Syn
 
 ## Guardrails
 
+- **Context before pixels** — Phase 0 completes before any `explore` or `screenshot` calls
+- **Persist, don't re-ask** — project-level context is saved to `$ROOT/.agent-sim/project.md` and reused across critiques
+- **Screen job is per-critique** — always asked fresh since it changes per screen
+- **Don't assume the screen job** — even if you can see it's a login screen, ask the user
+- **No empty placeholders** — if the user skips a project context question, write `(not provided)`, never leave `{braces}`
 - **React before analyzing** — Phase 1 impression is saved to disk before any HIG docs are loaded
 - **Classify once** — screen element categorization happens in Phase 1 step 4, not repeated in Phase 2
 - **Deduplicate reads** — if a file was loaded for one dimension, skip it for the next. The INDEX tracks shared files.
 - **Cite or skip** — every dimensional critique must blockquote a specific HIG file and section. No quote, no critique.
 - **NEVER/INSTEAD + Swift** — every recommendation pairs an anti-pattern with a fix that includes SwiftUI code
 - **Connect as you go** — "Connects to" links between dimensions are written during Phase 2, not after
-- **Ground aspirations** — the "award-winner" reference must name a real shipped app, not a hypothetical
+- **One aspiration reference** — name one real app that solves this problem. The user's aspiration if it fits, otherwise the most instructive example. Never two.
 - **Variable output** — don't force 5 recommendations if 3 are genuine. Don't force 5 dimensions if 2 are insightful.
 - **Only `agent-sim`** — all simulator interaction goes through `agent-sim`
 - **Timestamp output** — every critique gets a unique filename. Never overwrite a previous critique.

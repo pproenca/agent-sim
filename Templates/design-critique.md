@@ -14,16 +14,33 @@
 
 ---
 
+## Project Context
+
+<!-- Loaded from $ROOT/.agent-sim/project.md. Grounds every observation in who
+     this product is for and what this screen needs to accomplish.
+     All 5 persisted fields + the per-critique screen job. -->
+
+**App**: {from project.md}
+**User**: {from project.md}
+**Stage**: {from project.md}
+**Aspiration**: {from project.md}
+**Brand voice**: {from project.md}
+**This screen's job**: {what the user should DO or UNDERSTAND — asked fresh each critique}
+
+---
+
 ## First Impression
 
 <!-- Written BEFORE loading any HIG docs. Raw reaction only.
      If you loaded HIG docs first, your impression is contaminated — start over. -->
 
+**For a** {persona} **trying to** {screen job}:
+
 **In 3 seconds, this screen says**: {one sentence — what the screen communicates at a glance}
 
 **It makes me feel**: {one word, then why in one sentence}
 
-**What I expected but didn't find**: {what's absent — could be an element, a state, or a feeling}
+**What I expected but didn't find**: {what's absent, given the screen's job}
 
 **Boldness**: {TIMID | SAFE | COMPETENT | CONFIDENT | BRAVE}
 
@@ -31,7 +48,10 @@
      SAFE: Follows conventions correctly but takes no risks.
      COMPETENT: Good decisions visible, but nothing surprising.
      CONFIDENT: Clear point of view, some unconventional choices that work.
-     BRAVE: Opinionated, memorable, would notice this in an ADA submission. -->
+     BRAVE: Opinionated, memorable, would notice this in an ADA submission.
+
+     Calibrate to stage: MVP — SAFE is OK; v1 — COMPETENT baseline;
+     Growth — CONFIDENT expected; Redesign — BRAVE or bust. -->
 
 {Why this rating — 1 sentence that names what's missing or what's working.}
 
@@ -53,7 +73,7 @@
 > "{Exact quote — copy-paste from the loaded file}"
 > — `{filename}`, {section name}
 
-**The gap**: {How the observation violates the principle. One sentence, direct.}
+**The gap**: {How the observation violates the principle — and what it costs the persona. One sentence, direct.}
 
 **NEVER**: {The specific anti-pattern on THIS screen. Not generic advice.}
 **INSTEAD**: {The specific fix for THIS screen, with SwiftUI code.}
@@ -61,7 +81,7 @@
 // {1-3 lines showing the modifier, view, or pattern}
 ```
 
-**Connects to**: {If this finding amplifies or tensions with another dimension, say so here. E.g., "This compounds the Typography finding — both the CTA and body text fight for the same visual level." Leave blank if no connection yet.}
+**Connects to**: {If this finding amplifies or tensions with another dimension, say so — in terms of the persona's experience. Leave blank if no connection yet.}
 
 ---
 
@@ -69,16 +89,14 @@
 
 ## What This Screen Is Missing
 
-<!-- This replaces the formulaic "cross-pollination" section.
-     By now you've found connections between dimensions in the "Connects to" fields.
-     Synthesize them here into ONE insight about the screen's fundamental weakness
-     and ONE concrete move that would fix the most problems at once. -->
+<!-- Synthesize "Connects to" links into ONE insight about the screen's fundamental
+     weakness and ONE concrete move that fixes the most problems at once. -->
 
-**The compound problem**: {Name the underlying issue that multiple dimensions point to. E.g., "This screen treats every element as equally important — the CTA, the helper text, the navigation, the logo — which means nothing is important." This should reference at least 2 dimensions.}
+**The compound problem**: {What the persona experiences because of multiple overlapping issues. E.g., "A first-time pet owner can't find the primary action because the CTA, helper text, and navigation all fight for the same visual level." Reference at least 2 dimensions.}
 
-**The single change that fixes the most**: {One concrete, implementable change. Not "add animations" — describe exactly what happens, when, and why it addresses the compound problem. Include SwiftUI direction.}
+**The single change that fixes the most**: {One concrete, implementable change. Describe exactly what happens and why it unblocks the persona from completing the screen's job. Include SwiftUI direction.}
 
-**What {a specific ADA-winning app} does here**: {Name a real, shipped app that solves a similar screen well. Describe what they do and what principle it demonstrates. Grounded in reality, not fantasy. E.g., "Things 3's add-task screen uses a single oversized text field with no chrome — the emptiness IS the invitation to type. Principle: removing UI can be braver than adding it."}
+**What {app name} does here**: {One real, shipped app — the user's aspiration if it fits this problem, otherwise the most instructive example. Describe what they do and what principle it demonstrates.}
 
 ---
 
