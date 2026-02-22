@@ -58,4 +58,97 @@ struct JournalIntegrationTests {
     #expect(state.lastFingerprint == "aaa11111")
     #expect(state.lastScreenName == "Settings")
   }
+
+  // MARK: - JournalEntry field values (ternary correctness via production builders)
+
+  @Test("coords field is nil when coords string is empty")
+  func coordsNilWhenEmpty() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "", before: "s1", beforeName: "S1",
+      result: "same-screen", after: "s2", afterName: "S2",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.coords == nil)
+  }
+
+  @Test("coords field preserves value when non-empty")
+  func coordsPreservedWhenPresent() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "196,400", before: "s1", beforeName: "S1",
+      result: "same-screen", after: "s2", afterName: "S2",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.coords == "196,400")
+  }
+
+  @Test("screenAfter is nil when after string is empty")
+  func screenAfterNilWhenEmpty() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "", before: "s1", beforeName: "S1",
+      result: "same-screen", after: "", afterName: "",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.screenAfter == nil)
+  }
+
+  @Test("screenAfter preserves value when non-empty")
+  func screenAfterPreservedWhenPresent() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "", before: "s1", beforeName: "S1",
+      result: "navigated", after: "def67890", afterName: "Home",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.screenAfter == "def67890")
+  }
+
+  @Test("screenAfterName is nil when afterName string is empty")
+  func screenAfterNameNilWhenEmpty() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "", before: "s1", beforeName: "S1",
+      result: "navigated", after: "def67890", afterName: "",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.screenAfterName == nil)
+  }
+
+  @Test("screenAfterName preserves value when non-empty")
+  func screenAfterNamePreservedWhenPresent() {
+    let entry = JournalLog.buildJournalEntry(
+      index: 1, action: "tap", target: "Button",
+      coords: "", before: "s1", beforeName: "S1",
+      result: "navigated", after: "def67890", afterName: "Home",
+      screenshot: nil, issue: nil
+    )
+    #expect(entry.screenAfterName == "Home")
+  }
+
+  @Test("Heading uses target when target is non-empty")
+  func headingUsesTarget() {
+    let heading = JournalLog.buildHeading(index: 1, action: "tap", target: "Sign In")
+    #expect(heading == "### #1 — Sign In")
+  }
+
+  @Test("Heading uses action when target is empty")
+  func headingUsesActionWhenNoTarget() {
+    let heading = JournalLog.buildHeading(index: 1, action: "swipe", target: "")
+    #expect(heading == "### #1 — swipe")
+  }
+
+  @Test("Screen line includes name when present")
+  func screenLineIncludesName() {
+    let line = JournalLog.buildScreenLine(prefix: "before", hash: "abc12345", name: "Welcome")
+    #expect(line == "abc12345 — Welcome")
+  }
+
+  @Test("Screen line omits name separator when name is empty")
+  func screenLineOmitsNameWhenEmpty() {
+    let line = JournalLog.buildScreenLine(prefix: "before", hash: "abc12345", name: "")
+    #expect(line == "abc12345")
+    #expect(!line.contains("—"))
+  }
 }

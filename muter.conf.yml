@@ -1,0 +1,9 @@
+arguments:
+- test
+- --filter
+- AgentSimTests
+executable: /usr/bin/swift
+exclude:
+- Sources/AgentSimCLI
+excludeCalls: []
+coverageThreshold: 0
