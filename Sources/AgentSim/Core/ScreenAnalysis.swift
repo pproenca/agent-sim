@@ -7,6 +7,7 @@ struct ScreenAnalysis: Encodable {
   let screenName: String
   let elementCount: Int
   let interactiveCount: Int
+  let warning: String?
   let tabs: [TabItem]
   let navigation: [ClassifiedElement]
   let actions: [ClassifiedElement]
@@ -112,11 +113,18 @@ enum ScreenAnalyzer {
       actions: actions, navigation: navigation, tabs: tabs, tree: tree
     )
 
+    let warning = detectSystemUIOverlay(
+      screenName: screenName,
+      elementCount: allElements.count,
+      interactiveCount: interactive.count
+    )
+
     return ScreenAnalysis(
       fingerprint: fingerprint,
       screenName: screenName,
       elementCount: allElements.count,
       interactiveCount: interactive.count,
+      warning: warning,
       tabs: tabs,
       navigation: navigation,
       actions: actions,
@@ -234,6 +242,53 @@ enum ScreenAnalyzer {
     }
 
     return suggestions
+  }
+
+  // MARK: - System UI Overlay Detection
+
+  /// Detect system UI overlays (Apple Sign In, permission prompts, etc.)
+  /// that are invisible to the AX tree. Heuristic: very few elements AND
+  /// zero interactive elements, optionally combined with a time-like screen name
+  /// (which indicates the status bar is the only readable content).
+  private static func detectSystemUIOverlay(
+    screenName: String,
+    elementCount: Int,
+    interactiveCount: Int
+  ) -> String? {
+    let isTimeName = looksLikeClockTime(screenName)
+    // Minimal tree with no interactive elements — likely a system overlay
+    if elementCount < 5 && interactiveCount == 0 {
+      if isTimeName {
+        return "System UI overlay detected (screen shows only status bar time \"\(screenName)\"). "
+          + "A system dialog (Apple Sign In, permission prompt, etc.) is likely blocking the app. "
+          + "These overlays are invisible to the accessibility tree. "
+          + "Use `agent-sim screenshot` and coordinate-based `agent-sim tap <x> <y>` to interact."
+      }
+      return "Possible system UI overlay: very few elements (\(elementCount)) and no interactive controls. "
+        + "A system dialog may be blocking the app. "
+        + "Use `agent-sim screenshot` and coordinate-based `agent-sim tap <x> <y>` to interact."
+    }
+    return nil
+  }
+
+  /// Check if a string looks like a clock time (e.g. "9:41", "13:37", "12:00 PM").
+  private static func looksLikeClockTime(_ s: String) -> Bool {
+    let trimmed = s.trimmingCharacters(in: .whitespaces)
+    // Strip optional AM/PM suffix
+    var core = trimmed
+    for suffix in [" AM", " PM", " am", " pm"] {
+      if core.hasSuffix(suffix) {
+        core = String(core.dropLast(suffix.count))
+        break
+      }
+    }
+    // Must be H:MM or HH:MM
+    let parts = core.split(separator: ":")
+    guard parts.count == 2,
+          let hour = Int(parts[0]), let minute = Int(parts[1]),
+          (0...23).contains(hour), (0...59).contains(minute)
+    else { return false }
+    return true
   }
 
   // MARK: - Screen Name Inference

@@ -117,6 +117,49 @@ struct Next: AsyncParsableCommand {
       )
     }
 
+    // System UI overlay → recovery via screenshot + coordinate tap
+    if let warning = analysis.warning {
+      return NextInstruction(
+        phase: .screenExhausted,
+        instruction: warning,
+        action: .init(
+          type: .recover,
+          target: "system-ui-overlay",
+          command: "agent-sim screenshot",
+          reason: "System dialog is blocking the app — the AX tree cannot see it. "
+            + "Take a screenshot, identify button positions visually, then use coordinate-based tap.",
+          tapX: nil, tapY: nil
+        ),
+        currentScreen: .init(
+          name: analysis.screenName,
+          fingerprint: analysis.fingerprint,
+          interactiveCount: analysis.interactiveCount,
+          tappedCount: 0,
+          remainingCount: 0
+        ),
+        progress: .init(
+          screensVisited: journalState.screens.count,
+          totalActions: journalState.totalActions,
+          issuesFound: journalState.issues,
+          crashesDetected: journalState.crashes,
+          journalPath: journalPath
+        ),
+        afterAction: [
+          "# Look at the screenshot to identify the dialog buttons",
+          "agent-sim tap <x> <y>  # tap the appropriate button (e.g. Allow, Continue, Cancel)",
+          "agent-sim wait --timeout 5",
+          "agent-sim next --journal \(shellEscape(journalPath))"
+        ],
+        guardrails: [
+          "System dialogs (Apple Sign In, permission prompts, biometrics) are INVISIBLE to the AX tree.",
+          "You MUST use `agent-sim screenshot` to see what's on screen.",
+          "Use coordinate-based `agent-sim tap <x> <y>` — label-based tap will NOT work.",
+          "Common patterns: 'Allow' is usually bottom-right, 'Don't Allow' is bottom-left.",
+          "After dismissing, run `agent-sim explore` to verify the app is back to normal.",
+        ]
+      )
+    }
+
     // Check limits
     if journalState.screens.count >= maxScreens {
       return completeInstruction(

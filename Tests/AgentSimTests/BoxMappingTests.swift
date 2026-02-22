@@ -61,6 +61,7 @@ struct BoxMappingTests {
       screenName: "Test",
       elementCount: 10,
       interactiveCount: 5,
+      warning: nil,
       tabs: [
         .init(label: "Home", tapX: 60, tapY: 830, isSelected: true),
         .init(label: "Schedule", tapX: 150, tapY: 830, isSelected: false),

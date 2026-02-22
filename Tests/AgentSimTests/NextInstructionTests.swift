@@ -426,4 +426,54 @@ struct NextInstructionTests {
     // Two navigations forward, one same-screen → depth = 2
     #expect(state.currentDepth == 2)
   }
+
+  // MARK: - System UI Overlay Interception
+
+  @Test("System UI overlay triggers recovery instruction instead of normal flow")
+  func systemUIOverlayTriggersRecovery() {
+    // Build a minimal screen that triggers the system UI warning
+    let timeText = AXNodeBuilder.text("9:41", at: (196, 10), size: (50, 20))
+    let tree = AXNodeBuilder.screenContent(children: [timeText])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    // Verify the warning is set (precondition)
+    #expect(analysis.warning != nil)
+
+    let state = emptyJournalState()
+    let result = Next.determineInstruction(
+      journalPath: "/tmp/journal.md",
+      journalState: state,
+      analysis: analysis,
+      simulatorError: nil,
+      bundleID: "com.test.app",
+      maxScreens: 80
+    )
+
+    #expect(result.phase == .screenExhausted)
+    #expect(result.action?.type == .recover)
+    #expect(result.action?.target == "system-ui-overlay")
+    #expect(result.action?.command.contains("screenshot") == true)
+    #expect(result.guardrails.contains(where: { $0.contains("INVISIBLE") }))
+  }
+
+  @Test("Normal screen with interactive elements follows standard flow, not recovery")
+  func normalScreenFollowsStandardFlow() {
+    let analysis = analysisWithActions(["Sign In", "Register"])
+
+    // Verify no warning (precondition)
+    #expect(analysis.warning == nil)
+
+    let state = emptyJournalState()
+    let result = Next.determineInstruction(
+      journalPath: "/tmp/journal.md",
+      journalState: state,
+      analysis: analysis,
+      simulatorError: nil,
+      bundleID: nil,
+      maxScreens: 80
+    )
+
+    #expect(result.phase == .newScreen)
+    #expect(result.action?.type == .tap)
+  }
 }

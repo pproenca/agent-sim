@@ -383,6 +383,53 @@ struct ScreenAnalyzerTests {
     }
   }
 
+  // MARK: - System UI Overlay Detection
+
+  @Test("Minimal tree with time-like screen name triggers system UI warning")
+  func systemUIOverlayWithTimeName() {
+    // Simulate a screen with only a status bar time label and no interactive elements
+    let timeText = AXNodeBuilder.text("9:41", at: (196, 10), size: (50, 20))
+    let tree = AXNodeBuilder.screenContent(children: [timeText])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.warning != nil)
+    #expect(analysis.warning?.contains("System UI overlay detected") == true)
+    #expect(analysis.warning?.contains("9:41") == true)
+  }
+
+  @Test("Minimal tree with no interactive elements triggers possible overlay warning")
+  func systemUIOverlayMinimalTree() {
+    // A few static texts, no buttons — like a system dialog blocking the app
+    let text1 = AXNodeBuilder.text("Loading", at: (196, 400), size: (100, 20))
+    let tree = AXNodeBuilder.screenContent(children: [text1])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.warning != nil)
+    #expect(analysis.warning?.contains("Possible system UI overlay") == true)
+  }
+
+  @Test("Normal screen with interactive elements has no warning")
+  func normalScreenNoWarning() {
+    let button = AXNodeBuilder.button("Continue", at: (196, 400))
+    let text = AXNodeBuilder.text("Welcome", at: (0, 60), size: (393, 30))
+    let tree = AXNodeBuilder.screenContent(children: [text, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.warning == nil)
+  }
+
+  @Test("Content-only screen with many elements has no warning")
+  func contentOnlyManyElementsNoWarning() {
+    // 6+ elements but no buttons — warning should not trigger (elementCount >= 5)
+    let texts = (0..<6).map { i in
+      AXNodeBuilder.text("Line \(i)", at: (0, Double(i) * 30 + 100), size: (300, 20))
+    }
+    let tree = AXNodeBuilder.screenContent(children: texts)
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.warning == nil)
+  }
+
   // MARK: - Helpers
 
   private func screenWithButton(

@@ -64,6 +64,10 @@ struct Explore: AsyncParsableCommand {
     screenshotPath: String?,
     annotatedPath: String?
   ) {
+    if let warning = analysis.warning {
+      print("WARNING: \(warning)")
+      print("")
+    }
     print("Screen: \(analysis.screenName)")
     print("Fingerprint: \(analysis.fingerprint)")
     print("Elements: \(analysis.elementCount) total, \(analysis.interactiveCount) interactive")
@@ -161,6 +165,7 @@ private struct ExploreOutput: Encodable {
   let screenName: String
   let elementCount: Int
   let interactiveCount: Int
+  let warning: String?
   let tabs: [ScreenAnalysis.TabItem]
   let navigation: [ScreenAnalysis.ClassifiedElement]
   let actions: [ScreenAnalysis.ClassifiedElement]
@@ -180,6 +185,7 @@ private struct ExploreOutput: Encodable {
     self.screenName = analysis.screenName
     self.elementCount = analysis.elementCount
     self.interactiveCount = analysis.interactiveCount
+    self.warning = analysis.warning
     self.tabs = analysis.tabs
     self.navigation = analysis.navigation
     self.actions = analysis.actions

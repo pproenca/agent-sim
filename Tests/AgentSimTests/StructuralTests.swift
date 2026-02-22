@@ -43,6 +43,7 @@ struct StructuralTests {
     let analysis = ScreenAnalysis(
       fingerprint: "abc12345", screenName: "Home",
       elementCount: 10, interactiveCount: 3,
+      warning: nil,
       tabs: [.init(label: "Home", tapX: 60, tapY: 830, isSelected: true)],
       navigation: [],
       actions: [.init(role: "AXButton", name: "OK", identifier: "", tapX: 196, tapY: 400, width: 100, height: 44)],

@@ -48,6 +48,17 @@ enum SimulatorBridge {
       if let match = all.first(where: { $0.udid == pinnedUDID }) {
         return match
       }
+      // Self-heal: if exactly one simulator is booted, switch to it
+      if all.count == 1 {
+        let fallback = all[0]
+        fputs(
+          "warning: Pinned device \(pinnedUDID) is not booted. "
+          + "Auto-switching to \(fallback.name) (\(fallback.udid)).\n",
+          stderr
+        )
+        _ = try? ProjectConfig.pinDevice(fallback.udid)
+        return fallback
+      }
       throw DeviceResolutionError.pinnedDeviceNotBooted(pinnedUDID, available: all)
     }
 
@@ -191,6 +202,15 @@ enum SimulatorBridge {
     simulatorID: String, bundleID: String,
     arguments: [String] = [], environment: [String: String] = [:]
   ) async throws {
+    // Pre-flight: verify the app is installed before attempting launch
+    let userApps = try await installedApps(simulatorID: simulatorID, userOnly: true)
+    if !userApps.contains(where: { $0.bundleID == bundleID }) {
+      throw LaunchError.appNotInstalled(
+        bundleID: bundleID,
+        installedApps: userApps.map { "\($0.name) (\($0.bundleID))" }
+      )
+    }
+
     let simulator = try await resolveSimulator(udid: simulatorID)
     let io = FBProcessIO<AnyObject, AnyObject, AnyObject>.outputToDevNull()
     let config = FBApplicationLaunchConfiguration(
@@ -354,12 +374,26 @@ enum SimulatorBridge {
   }
 
   enum LaunchError: Error, LocalizedError {
+    case appNotInstalled(bundleID: String, installedApps: [String])
     case launchFailed(bundleID: String, reason: String)
 
     var errorDescription: String? {
       switch self {
+      case .appNotInstalled(let bundleID, let installedApps):
+        let appList = installedApps.isEmpty
+          ? "  (none)"
+          : installedApps.map { "  \($0)" }.joined(separator: "\n")
+        return """
+          App "\(bundleID)" is not installed on this simulator.
+
+          Installed user apps:
+          \(appList)
+
+          Install it first: agent-sim install <path-to-.app>
+          List all apps:     agent-sim apps
+          """
       case .launchFailed(let bundleID, let reason):
-        "Launch failed for \(bundleID): \(reason)"
+        return "Launch failed for \(bundleID): \(reason)"
       }
     }
   }
