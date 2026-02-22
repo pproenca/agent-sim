@@ -29,6 +29,8 @@ public struct AgentSim: AsyncParsableCommand {
       Terminate.self,
       Network.self,
       Status.self,
+      Update.self,
+      Doctor.self,
     ]
   )
 }

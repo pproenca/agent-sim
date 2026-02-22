@@ -157,6 +157,57 @@ enum ProjectConfig {
     return nil
   }
 
+  // MARK: - Asset Root
+
+  /// Find the directory containing bundled assets (`commands/`, `Templates/`, `references/`).
+  ///
+  /// Discovery chain:
+  /// 1. **Dev checkout**: existing `pluginRoot()` — walks up looking for `.claude-plugin/plugin.json`
+  /// 2. **curl install**: `commands/` next to the resolved executable (`~/.local/lib/agent-sim/`)
+  /// 3. **Homebrew**: `../lib/agent-sim/commands/` relative to executable dir
+  static func assetRoot() -> String? {
+    // 1. Dev checkout
+    if let root = pluginRoot() {
+      let commands = (root as NSString).appendingPathComponent("commands")
+      if FileManager.default.fileExists(atPath: commands) {
+        return root
+      }
+    }
+
+    // Resolve executable location
+    guard let execURL = Bundle.main.executableURL else { return nil }
+    let resolved = execURL.resolvingSymlinksInPath()
+    let execDir = resolved.deletingLastPathComponent().path
+
+    // 2. curl install: assets live next to the binary
+    let curlCandidate = (execDir as NSString).appendingPathComponent("commands")
+    if FileManager.default.fileExists(atPath: curlCandidate) {
+      return execDir
+    }
+
+    // 3. Homebrew: binary in bin/, assets in ../lib/agent-sim/
+    let brewCandidate = ((execDir as NSString).deletingLastPathComponent as NSString)
+      .appendingPathComponent("lib/agent-sim")
+    let brewCommands = (brewCandidate as NSString).appendingPathComponent("commands")
+    if FileManager.default.fileExists(atPath: brewCommands) {
+      return brewCandidate
+    }
+
+    return nil
+  }
+
+  /// Path to the bundled `commands/` directory, if available.
+  static func commandsPath() -> String? {
+    guard let root = assetRoot() else { return nil }
+    return (root as NSString).appendingPathComponent("commands")
+  }
+
+  /// Path to the bundled `Templates/` directory, if available.
+  static func templatesPath() -> String? {
+    guard let root = assetRoot() else { return nil }
+    return (root as NSString).appendingPathComponent("Templates")
+  }
+
   // MARK: - Private
 
   /// Walk up from CWD looking for `.agent-sim/config.json`.
@@ -167,7 +218,7 @@ enum ProjectConfig {
   }
 
   /// Find the `.agent-sim/` directory by walking up from CWD.
-  /// Matches on the directory existing (may contain config.json, device, or both).
+  /// Matches on the directory existing (may contain config.json, device, manifest.json, or any combination).
   static func findAgentSimDirectory() -> String? {
     let fm = FileManager.default
     var dir = fm.currentDirectoryPath

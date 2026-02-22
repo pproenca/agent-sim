@@ -34,6 +34,17 @@ NEW_TAG="v${NEW_VERSION}"
 echo "Releasing: ${LATEST_TAG} → ${NEW_TAG} (${BUMP})"
 echo ""
 
+# --- Sync plugin.json version ---
+PLUGIN_JSON="$ROOT/.claude-plugin/plugin.json"
+if [[ -f "$PLUGIN_JSON" ]]; then
+  # Update version in plugin.json to match the new tag
+  sed -i '' -E "s/\"version\": *\"[^\"]+\"/\"version\": \"${NEW_VERSION}\"/" "$PLUGIN_JSON"
+  if ! git diff --quiet "$PLUGIN_JSON"; then
+    git add "$PLUGIN_JSON"
+    git commit -m "Sync plugin.json version to ${NEW_TAG}"
+  fi
+fi
+
 # --- Preflight checks ---
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "Error: working tree is dirty. Commit or stash changes first."

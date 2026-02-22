@@ -159,6 +159,12 @@ verify() {
   agent-sim --version 2>/dev/null || agent-sim --help 2>&1 | head -1
   echo ""
   green "Ready. Run: agent-sim boot"
+
+  # Hint about updating existing projects
+  if [[ -f ".agent-sim/manifest.json" ]]; then
+    echo ""
+    dim "Tip: Run 'agent-sim update' to sync commands in this project."
+  fi
 }
 
 # --- Main ---

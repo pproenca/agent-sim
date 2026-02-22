@@ -69,20 +69,53 @@ struct Init: ParsableCommand {
     )
 
     // Install agent tool integrations
-    let pluginRoot = ProjectConfig.pluginRoot()
+    let assetRoot = ProjectConfig.assetRoot()
+    var installedChecksums: [String: Manifest.FileEntry] = [:]
+    var assetSource: Manifest.FileEntry.Source = .stub
 
     for tool in resolvedTools {
       switch tool {
       case "claude":
-        try installClaude(projectRoot: projectRoot, pluginRoot: pluginRoot, scope: resolvedScope)
+        let checksums = try installClaude(
+          projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope
+        )
+        installedChecksums.merge(checksums) { _, new in new }
       case "cursor":
-        try installCursor(projectRoot: projectRoot, pluginRoot: pluginRoot, scope: resolvedScope)
+        try installCursor(projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope)
       case "windsurf":
-        try installWindsurf(projectRoot: projectRoot, pluginRoot: pluginRoot, scope: resolvedScope)
+        try installWindsurf(projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope)
       default:
         print("  Unknown tool: \(tool), skipping")
       }
     }
+
+    if assetRoot != nil { assetSource = .bundled }
+
+    // If no Claude checksums yet (non-claude tools only), compute from asset root
+    if installedChecksums.isEmpty, let assetRoot {
+      let commandsDir = (assetRoot as NSString).appendingPathComponent("commands")
+      let fm = FileManager.default
+      if let files = try? fm.contentsOfDirectory(atPath: commandsDir) {
+        for file in files where file.hasSuffix(".md") {
+          let path = (commandsDir as NSString).appendingPathComponent(file)
+          if let sha = FileChecksum.sha256(atPath: path) {
+            installedChecksums[file] = Manifest.FileEntry(sha256: sha, source: .bundled)
+          }
+        }
+      }
+    }
+
+    // Write manifest
+    let agentSimDir = (configPath as NSString).deletingLastPathComponent
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    let manifest = Manifest(
+      version: AgentSim.configuration.version,
+      installedAt: formatter.string(from: Date()),
+      tools: resolvedTools,
+      commands: installedChecksums
+    )
+    try ManifestIO.write(manifest, toDir: agentSimDir)
 
     // Summary
     print("")
@@ -93,11 +126,17 @@ struct Init: ParsableCommand {
     if !resolvedTools.isEmpty {
       print("  Tools:    \(resolvedTools.joined(separator: ", "))")
     }
+    print("  Assets:   \(assetSource == .bundled ? "bundled" : "stubs")")
+    print("  Manifest: \(agentSimDir)/manifest.json")
     print("")
     print("Commands available:")
     print("  /agentsim:new     — Start a QA sweep")
     print("  /agentsim:apply   — Fix findings")
     print("  /agentsim:replay  — Replay scenarios")
+    if assetSource == .stub {
+      print("")
+      print("Note: Commands installed as stubs. Install from source or update to get full commands.")
+    }
   }
 
   // MARK: - Scope Resolution
@@ -152,11 +191,12 @@ struct Init: ParsableCommand {
 
   // MARK: - Tool Installation
 
+  @discardableResult
   private func installClaude(
     projectRoot: String,
-    pluginRoot: String?,
+    assetRoot: String?,
     scope: ProjectConfig.Config.Scope
-  ) throws {
+  ) throws -> [String: Manifest.FileEntry] {
     let targetDir: String
     switch scope {
     case .project:
@@ -166,13 +206,14 @@ struct Init: ParsableCommand {
       targetDir = "\(home)/.claude/commands/agentsim"
     }
 
-    try installCommands(to: targetDir, from: pluginRoot)
+    let checksums = try installCommands(to: targetDir, from: assetRoot)
     print("  Claude Code: installed commands to \(targetDir)")
+    return checksums
   }
 
   private func installCursor(
     projectRoot: String,
-    pluginRoot: String?,
+    assetRoot: String?,
     scope: ProjectConfig.Config.Scope
   ) throws {
     let targetDir: String
@@ -189,7 +230,7 @@ struct Init: ParsableCommand {
     )
 
     // Generate a single rules file from the commands
-    let rulesContent = generateCursorRules(from: pluginRoot)
+    let rulesContent = generateCursorRules(from: assetRoot)
     let rulesPath = (targetDir as NSString).appendingPathComponent("agentsim.mdc")
     try rulesContent.write(toFile: rulesPath, atomically: true, encoding: .utf8)
     print("  Cursor: installed rules to \(rulesPath)")
@@ -197,7 +238,7 @@ struct Init: ParsableCommand {
 
   private func installWindsurf(
     projectRoot: String,
-    pluginRoot: String?,
+    assetRoot: String?,
     scope: ProjectConfig.Config.Scope
   ) throws {
     let targetDir: String
@@ -213,7 +254,7 @@ struct Init: ParsableCommand {
       atPath: targetDir, withIntermediateDirectories: true
     )
 
-    let rulesContent = generateCursorRules(from: pluginRoot) // Same format works
+    let rulesContent = generateCursorRules(from: assetRoot) // Same format works
     let rulesPath = (targetDir as NSString).appendingPathComponent("agentsim.md")
     try rulesContent.write(toFile: rulesPath, atomically: true, encoding: .utf8)
     print("  Windsurf: installed rules to \(rulesPath)")
@@ -221,16 +262,21 @@ struct Init: ParsableCommand {
 
   // MARK: - Command Installation
 
-  private func installCommands(to targetDir: String, from pluginRoot: String?) throws {
+  @discardableResult
+  private func installCommands(
+    to targetDir: String, from assetRoot: String?
+  ) throws -> [String: Manifest.FileEntry] {
     let fm = FileManager.default
     try fm.createDirectory(atPath: targetDir, withIntermediateDirectories: true)
+    var checksums: [String: Manifest.FileEntry] = [:]
 
-    guard let pluginRoot,
-          fm.fileExists(atPath: (pluginRoot as NSString).appendingPathComponent("commands"))
+    guard let assetRoot,
+          fm.fileExists(atPath: (assetRoot as NSString).appendingPathComponent("commands"))
     else {
-      // No plugin root found — write minimal stubs
+      // No asset root found — write minimal stubs
       for name in ["new", "apply", "replay"] {
-        let stubPath = (targetDir as NSString).appendingPathComponent("\(name).md")
+        let filename = "\(name).md"
+        let stubPath = (targetDir as NSString).appendingPathComponent(filename)
         if !fm.fileExists(atPath: stubPath) {
           let stub = """
             ---
@@ -241,12 +287,15 @@ struct Init: ParsableCommand {
             """
           try stub.write(toFile: stubPath, atomically: true, encoding: .utf8)
         }
+        if let sha = FileChecksum.sha256(atPath: stubPath) {
+          checksums[filename] = Manifest.FileEntry(sha256: sha, source: .stub)
+        }
       }
-      return
+      return checksums
     }
 
-    // Copy command files from plugin root
-    let commandsDir = (pluginRoot as NSString).appendingPathComponent("commands")
+    // Copy command files from asset root
+    let commandsDir = (assetRoot as NSString).appendingPathComponent("commands")
     let files = try fm.contentsOfDirectory(atPath: commandsDir)
     for file in files where file.hasSuffix(".md") {
       let src = (commandsDir as NSString).appendingPathComponent(file)
@@ -255,12 +304,16 @@ struct Init: ParsableCommand {
         try fm.removeItem(atPath: dst)
       }
       try fm.copyItem(atPath: src, toPath: dst)
+      if let sha = FileChecksum.sha256(atPath: dst) {
+        checksums[file] = Manifest.FileEntry(sha256: sha, source: .bundled)
+      }
     }
+    return checksums
   }
 
   // MARK: - Cursor/Windsurf Rules Generation
 
-  private func generateCursorRules(from pluginRoot: String?) -> String {
+  private func generateCursorRules(from assetRoot: String?) -> String {
     var rules = """
       ---
       description: AgentSim — AI-driven iOS simulator exploration
@@ -297,8 +350,8 @@ struct Init: ParsableCommand {
       """
 
     // Append command content if available
-    if let pluginRoot {
-      let commandsDir = (pluginRoot as NSString).appendingPathComponent("commands")
+    if let assetRoot {
+      let commandsDir = (assetRoot as NSString).appendingPathComponent("commands")
       let fm = FileManager.default
       if let files = try? fm.contentsOfDirectory(atPath: commandsDir) {
         for file in files.sorted() where file.hasSuffix(".md") {

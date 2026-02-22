@@ -22,6 +22,11 @@ for fw in FBControlCore FBSimulatorControl FBDeviceControl XCTestBootstrap; do
   cp -R "Frameworks/${fw}.xcframework/macos-arm64/${fw}.framework" "$DIST/"
 done
 
+# Copy non-binary assets
+cp -R "$ROOT/commands" "$DIST/"
+cp -R "$ROOT/Templates" "$DIST/"
+cp -R "$ROOT/references" "$DIST/"
+
 # Strip debug symbols for smaller size
 strip -x "$DIST/agent-sim" 2>/dev/null || true
 

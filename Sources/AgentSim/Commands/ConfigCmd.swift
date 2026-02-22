@@ -30,7 +30,9 @@ struct ConfigCmd: ParsableCommand {
       }
 
     case "root":
-      if let root = ProjectConfig.pluginRoot() {
+      if let root = ProjectConfig.assetRoot() {
+        print(root)
+      } else if let root = ProjectConfig.pluginRoot() {
         print(root)
       } else {
         print("Could not resolve AgentSim root. Is the binary installed correctly?")
@@ -43,7 +45,9 @@ struct ConfigCmd: ParsableCommand {
       print(String(data: data, encoding: .utf8) ?? "{}")
       print("")
       print("Resolved journals directory: \(ProjectConfig.journalsDirectory())")
-      if let root = ProjectConfig.pluginRoot() {
+      if let root = ProjectConfig.assetRoot() {
+        print("Asset root: \(root)")
+      } else if let root = ProjectConfig.pluginRoot() {
         print("Plugin root: \(root)")
       }
 

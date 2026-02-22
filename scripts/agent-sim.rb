@@ -26,8 +26,13 @@ class AgentSim < Formula
     # so we install frameworks into the same directory as the real binary.
     frameworks = %w[FBControlCore FBSimulatorControl FBDeviceControl XCTestBootstrap]
     frameworks.each do |fw|
-      (bin/".."/"lib"/"agent-sim").install "#{fw}.framework"
+      (lib/"agent-sim").install "#{fw}.framework"
     end
+
+    # Non-binary assets (commands, templates, references)
+    (lib/"agent-sim").install "commands"
+    (lib/"agent-sim").install "Templates"
+    (lib/"agent-sim").install "references"
 
     # Rewrite rpath so the binary finds frameworks in lib/agent-sim/
     system "install_name_tool", "-add_rpath", "#{lib}/agent-sim", bin/"agent-sim"
