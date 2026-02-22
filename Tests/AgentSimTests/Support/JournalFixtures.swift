@@ -1,5 +1,6 @@
 /// Pre-built journal markdown fixtures for SweepStateReader tests.
 import Foundation
+@testable import AgentSimLib
 
 enum JournalFixtures {
 
@@ -133,5 +134,39 @@ enum JournalFixtures {
     let path = dir.appendingPathComponent(name).path
     try! content.write(toFile: path, atomically: true, encoding: .utf8)
     return path
+  }
+
+  /// Write a JSON sidecar file alongside the markdown path.
+  static func writeJSONSidecar(for mdPath: String, entries: [JournalEntry]) {
+    let sidecar = JournalSidecar(version: 1, entries: entries)
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let data = try! encoder.encode(sidecar)
+    let jsonPath = SweepStateReader.jsonSidecarPath(for: mdPath)
+    try! data.write(to: URL(fileURLWithPath: jsonPath), options: .atomic)
+  }
+
+  /// Sample entries matching the threeActions markdown fixture.
+  static func sampleEntries() -> [JournalEntry] {
+    [
+      JournalEntry(
+        index: 1, action: "tap", target: "Sign In",
+        coords: "196,426", screenBefore: "abc12345", screenBeforeName: "Welcome",
+        result: "navigated", screenAfter: "def67890", screenAfterName: "Home",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:01:00Z"
+      ),
+      JournalEntry(
+        index: 2, action: "tap", target: "View Profile",
+        coords: "350,50", screenBefore: "def67890", screenBeforeName: "Home",
+        result: "navigated", screenAfter: "ghi11111", screenAfterName: "Profile",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:02:00Z"
+      ),
+      JournalEntry(
+        index: 3, action: "back", target: "Back",
+        coords: "30,50", screenBefore: "ghi11111", screenBeforeName: "Profile",
+        result: "navigated", screenAfter: "def67890", screenAfterName: "Home",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:03:00Z"
+      ),
+    ]
   }
 }

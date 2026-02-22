@@ -11,7 +11,8 @@ struct NextInstructionTests {
       totalActions: 0, navigations: 0, sameScreen: 0,
       crashes: 0, issues: 0,
       screens: [], tappedElements: [],
-      lastFingerprint: nil, lastScreenName: nil
+      lastFingerprint: nil, lastScreenName: nil,
+      currentDepth: 0
     )
   }
 
@@ -20,13 +21,15 @@ struct NextInstructionTests {
     screens: Set<String> = [],
     tappedElements: Set<String> = [],
     crashes: Int = 0,
-    issues: Int = 0
+    issues: Int = 0,
+    currentDepth: Int = 0
   ) -> SweepStateReader.JournalState {
     SweepStateReader.JournalState(
       totalActions: totalActions, navigations: 0, sameScreen: 0,
       crashes: crashes, issues: issues,
       screens: screens, tappedElements: tappedElements,
-      lastFingerprint: nil, lastScreenName: nil
+      lastFingerprint: nil, lastScreenName: nil,
+      currentDepth: currentDepth
     )
   }
 
@@ -307,5 +310,87 @@ struct NextInstructionTests {
     let action = Next.findBackAction(analysis)
     #expect(action?.type == .swipe)
     #expect(action?.target == "left-edge")
+  }
+
+  // MARK: - maxDepth enforcement
+
+  @Test("maxDepth reached on new screen produces screenExhausted")
+  func maxDepthReachedOnNewScreen() {
+    // currentDepth = 3, maxDepth = 3 → at limit
+    let state = journalState(totalActions: 5, currentDepth: 3)
+    let analysis = analysisWithActions(["Button A", "Button B"])
+
+    let result = Next.determineInstruction(
+      journalPath: "/tmp/journal.md",
+      journalState: state,
+      analysis: analysis,
+      simulatorError: nil,
+      bundleID: nil,
+      maxScreens: 80,
+      maxDepth: 3
+    )
+
+    #expect(result.phase == .screenExhausted)
+    #expect(result.instruction.contains("Maximum depth"))
+  }
+
+  @Test("maxDepth reached on known screen still allows exploring")
+  func maxDepthOnKnownScreenStillExplores() {
+    let analysis = analysisWithActions(["Button A", "Button B"])
+    let shortFP = Fingerprinter.shortFingerprint(from: analysis.fingerprint)
+
+    // Screen already known, depth at limit
+    let state = journalState(totalActions: 5, screens: [shortFP], currentDepth: 3)
+
+    let result = Next.determineInstruction(
+      journalPath: "/tmp/journal.md",
+      journalState: state,
+      analysis: analysis,
+      simulatorError: nil,
+      bundleID: nil,
+      maxScreens: 80,
+      maxDepth: 3
+    )
+
+    // Known screen → not isNewScreen → depth check doesn't trigger
+    #expect(result.phase == .exploring)
+    #expect(result.action?.target == "Button A")
+  }
+
+  @Test("Depth decrements on back navigation in JSON entries")
+  func depthDecrementsOnBack() {
+    let entries = JournalFixtures.sampleEntries()
+    // entries: tap→navigated (depth 1), tap→navigated (depth 2), back→navigated (depth 1)
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    #expect(state.currentDepth == 1)
+  }
+
+  @Test("Depth computed correctly from navigation sequence")
+  func depthComputedFromSequence() {
+    let entries: [JournalEntry] = [
+      JournalEntry(
+        index: 1, action: "tap", target: "A", coords: nil,
+        screenBefore: "s1", screenBeforeName: "S1",
+        result: "navigated", screenAfter: "s2", screenAfterName: "S2",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:01:00Z"
+      ),
+      JournalEntry(
+        index: 2, action: "tap", target: "B", coords: nil,
+        screenBefore: "s2", screenBeforeName: "S2",
+        result: "navigated", screenAfter: "s3", screenAfterName: "S3",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:02:00Z"
+      ),
+      JournalEntry(
+        index: 3, action: "tap", target: "C", coords: nil,
+        screenBefore: "s3", screenBeforeName: "S3",
+        result: "same-screen", screenAfter: "s3", screenAfterName: "S3",
+        screenshot: nil, issue: nil, timestamp: "2026-02-21T10:03:00Z"
+      ),
+    ]
+    let state = SweepStateReader.computeStateFromEntries(entries)
+
+    // Two navigations forward, one same-screen → depth = 2
+    #expect(state.currentDepth == 2)
   }
 }

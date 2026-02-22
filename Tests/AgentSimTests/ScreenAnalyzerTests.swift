@@ -54,6 +54,60 @@ struct ScreenAnalyzerTests {
     #expect(analysis.navigation.count == 1)
   }
 
+  @Test("Button inside nav bar is classified as navigation regardless of label")
+  func buttonInsideNavBarIsNavigation() {
+    let editButton = AXNodeBuilder.button("Edit", at: (350, 22))
+    let navBarWithButton = AXNodeBuilder.node(
+      role: "AXNavigationBar",
+      x: 0, y: 0, width: 393, height: 44, depth: 2,
+      children: [editButton]
+    )
+    let tree = AXNodeBuilder.screenContent(children: [navBarWithButton])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.navigation.count == 1)
+    #expect(analysis.navigation[0].name == "Edit")
+  }
+
+  @Test("'Back' button at y=101 outside nav bar is classified as action")
+  func backOutsideNavBarIsAction() {
+    let tree = screenWithButton("Back", at: (30, 101))
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.navigation.isEmpty)
+    #expect(analysis.actions.count == 1)
+  }
+
+  @Test("'Delete' button inside nav bar is still destructive")
+  func deleteInsideNavBarStillDestructive() {
+    let deleteButton = AXNodeBuilder.button("Delete", at: (350, 22))
+    let navBar = AXNodeBuilder.node(
+      role: "AXNavigationBar",
+      x: 0, y: 0, width: 393, height: 44, depth: 2,
+      children: [deleteButton]
+    )
+    let tree = AXNodeBuilder.screenContent(children: [navBar])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.destructive.count == 1)
+    #expect(analysis.navigation.isEmpty)
+  }
+
+  @Test("Button inside nav bar with no keyword label is still navigation")
+  func noKeywordInsideNavBarIsNavigation() {
+    let button = AXNodeBuilder.button("Settings", at: (350, 22))
+    let navBar = AXNodeBuilder.node(
+      role: "AXNavigationBar",
+      x: 0, y: 0, width: 393, height: 44, depth: 2,
+      children: [button]
+    )
+    let tree = AXNodeBuilder.screenContent(children: [navBar])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.navigation.count == 1)
+    #expect(analysis.navigation[0].name == "Settings")
+  }
+
   @Test("'Back' button far from top (y >= 100) is classified as action, not navigation")
   func backFarFromTopIsAction() {
     // Center at y=500 — too far down to be a nav button
@@ -115,6 +169,47 @@ struct ScreenAnalyzerTests {
     let analysis = ScreenAnalyzer.analyze(tree)
 
     #expect(analysis.screenName == "Welcome")
+  }
+
+  @Test("Screen name from AXNavigationBar label")
+  func screenNameFromNavBarLabel() {
+    let navBar = AXNodeBuilder.navigationBar(title: "Settings")
+    let button = AXNodeBuilder.button("Toggle", at: (196, 400))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Settings")
+  }
+
+  @Test("Screen name from AXNavigationBar child AXStaticText")
+  func screenNameFromNavBarChildText() {
+    let titleText = AXNodeBuilder.text("Profile", at: (196, 22), size: (200, 20), depth: 3)
+    let navBar = AXNodeBuilder.navigationBar(children: [titleText])
+    let button = AXNodeBuilder.button("Edit", at: (196, 400))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, button])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Profile")
+  }
+
+  @Test("Empty nav bar falls through to existing Strategy 1")
+  func emptyNavBarFallsThrough() {
+    let navBar = AXNodeBuilder.navigationBar()
+    let title = AXNodeBuilder.text("Welcome", at: (0, 60), size: (393, 30))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, title])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Welcome")
+  }
+
+  @Test("Nav bar title wins over top text")
+  func navBarWinsOverTopText() {
+    let navBar = AXNodeBuilder.navigationBar(title: "Settings")
+    let topText = AXNodeBuilder.text("Feb 22, 2026", at: (0, 60), size: (393, 30))
+    let tree = AXNodeBuilder.screenContent(children: [navBar, topText])
+    let analysis = ScreenAnalyzer.analyze(tree)
+
+    #expect(analysis.screenName == "Settings")
   }
 
   @Test("Screen name falls back to 'Unknown Screen' when no text exists")

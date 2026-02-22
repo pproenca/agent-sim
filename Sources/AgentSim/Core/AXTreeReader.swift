@@ -29,6 +29,13 @@ struct AXNode: Sendable, Encodable {
     func offsetBy(dx: Double, dy: Double) -> Frame {
       Frame(x: x - dx, y: y - dy, width: width, height: height)
     }
+
+    /// Returns true if `other`'s center point falls within this frame.
+    func containsCenter(of other: Frame) -> Bool {
+      let cx = other.centerX
+      let cy = other.centerY
+      return cx >= x && cx <= x + width && cy >= y && cy <= y + height
+    }
   }
 
   var isInteractive: Bool {

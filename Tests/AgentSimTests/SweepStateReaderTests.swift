@@ -107,4 +107,74 @@ struct SweepStateReaderTests {
     #expect(state.screens.count == 1)
     #expect(state.screens.contains("aaa11111"))
   }
+
+  // MARK: - JSON Sidecar
+
+  @Test("JSON sidecar exists → reads from JSON, not markdown")
+  func jsonSidecarPreferred() {
+    // Write markdown with threeActions content
+    let path = JournalFixtures.writeTempFile(JournalFixtures.threeActions)
+    // Write JSON sidecar with only 2 entries (different from markdown)
+    let twoEntries = Array(JournalFixtures.sampleEntries().prefix(2))
+    JournalFixtures.writeJSONSidecar(for: path, entries: twoEntries)
+
+    let state = SweepStateReader.readJournal(at: path)!
+
+    // Should read from JSON (2 actions), not markdown (3 actions)
+    #expect(state.totalActions == 2)
+  }
+
+  @Test("No JSON sidecar → falls back to markdown")
+  func noJsonFallsBackToMarkdown() {
+    let path = JournalFixtures.writeTempFile(JournalFixtures.threeActions)
+    // No JSON sidecar written — should parse markdown
+    let state = SweepStateReader.readJournal(at: path)!
+
+    #expect(state.totalActions == 3)
+    #expect(state.navigations == 3)
+  }
+
+  @Test("JSON sidecar computes correct JournalState")
+  func jsonSidecarComputesState() {
+    let path = JournalFixtures.writeTempFile(JournalFixtures.empty)
+    JournalFixtures.writeJSONSidecar(for: path, entries: JournalFixtures.sampleEntries())
+
+    let state = SweepStateReader.readJournal(at: path)!
+
+    #expect(state.totalActions == 3)
+    #expect(state.navigations == 3)
+    #expect(state.screens.count == 3)
+    #expect(state.screens.contains("abc12345"))
+    #expect(state.screens.contains("def67890"))
+    #expect(state.screens.contains("ghi11111"))
+    #expect(state.tappedElements.contains("abc12345:Sign In"))
+    #expect(state.tappedElements.contains("def67890:View Profile"))
+    #expect(state.lastFingerprint == "def67890")
+    #expect(state.lastScreenName == "Home")
+  }
+
+  // MARK: - Depth Tracking
+
+  @Test("Depth tracked from markdown — forward navigations increase depth")
+  func depthFromMarkdownForward() {
+    let path = JournalFixtures.writeTempFile(JournalFixtures.threeActions)
+    let state = SweepStateReader.readJournal(at: path)!
+
+    // Action 1: tap → navigated (depth 1)
+    // Action 2: tap → navigated (depth 2)
+    // Action 3: back → navigated (depth 1)
+    #expect(state.currentDepth == 1)
+  }
+
+  @Test("Depth resets to 0 on crash")
+  func depthResetsOnCrash() {
+    let path = JournalFixtures.writeTempFile(JournalFixtures.withIssuesAndCrash)
+    let state = SweepStateReader.readJournal(at: path)!
+
+    // Action 1: tap → navigated (depth 1)
+    // Action 2: tap → same-screen (depth 1)
+    // Action 3: tap → crash (depth 0)
+    // Action 4: crash-recovery → navigated (depth 1)
+    #expect(state.currentDepth == 1)
+  }
 }

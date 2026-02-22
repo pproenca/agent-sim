@@ -48,6 +48,13 @@ struct JournalInit: ParsableCommand {
       """
 
     try content.write(toFile: outputPath, atomically: true, encoding: .utf8)
+
+    // Create empty JSON sidecar
+    let jsonPath = SweepStateReader.jsonSidecarPath(for: outputPath)
+    let sidecar = JournalSidecar(version: 1, entries: [])
+    let jsonData = try JSONEncoder().encode(sidecar)
+    try jsonData.write(to: URL(fileURLWithPath: jsonPath), options: .atomic)
+
     print(outputPath)
   }
 
@@ -137,6 +144,37 @@ struct JournalLog: ParsableCommand {
     handle.seekToEndOfFile()
     handle.write(Data(entry.utf8))
     handle.closeFile()
+
+    // Update JSON sidecar
+    let jsonPath = SweepStateReader.jsonSidecarPath(for: path)
+    let journalEntry = JournalEntry(
+      index: index,
+      action: action,
+      target: target,
+      coords: coords.isEmpty ? nil : coords,
+      screenBefore: before,
+      screenBeforeName: beforeName,
+      result: result,
+      screenAfter: after.isEmpty ? nil : after,
+      screenAfterName: afterName.isEmpty ? nil : afterName,
+      screenshot: screenshot,
+      issue: issue,
+      timestamp: ISO8601DateFormatter().string(from: Date())
+    )
+
+    var sidecar: JournalSidecar
+    if let data = try? Data(contentsOf: URL(fileURLWithPath: jsonPath)),
+       let existing = try? JSONDecoder().decode(JournalSidecar.self, from: data) {
+      sidecar = existing
+    } else {
+      sidecar = JournalSidecar(version: 1, entries: [])
+    }
+    sidecar.entries.append(journalEntry)
+
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let jsonData = try encoder.encode(sidecar)
+    try jsonData.write(to: URL(fileURLWithPath: jsonPath), options: .atomic)
   }
 }
 

@@ -63,6 +63,30 @@ struct NextInstruction: Encodable {
   }
 }
 
+// MARK: - JSON Sidecar Types
+
+struct JournalEntry: Codable {
+  let index: Int
+  let action: String
+  let target: String
+  let coords: String?
+  let screenBefore: String
+  let screenBeforeName: String
+  let result: String
+  let screenAfter: String?
+  let screenAfterName: String?
+  let screenshot: String?
+  let issue: String?
+  let timestamp: String
+}
+
+struct JournalSidecar: Codable {
+  let version: Int
+  var entries: [JournalEntry]
+}
+
+// MARK: - Reader
+
 /// Reads a journal file and computes sweep state.
 enum SweepStateReader {
 
@@ -76,13 +100,100 @@ enum SweepStateReader {
     let tappedElements: Set<String> // "fingerprint:target" pairs
     let lastFingerprint: String?
     let lastScreenName: String?
+    let currentDepth: Int
   }
 
   static func readJournal(at path: String) -> JournalState? {
+    // Try JSON sidecar first
+    let jsonPath = jsonSidecarPath(for: path)
+    if FileManager.default.fileExists(atPath: jsonPath),
+       let data = try? Data(contentsOf: URL(fileURLWithPath: jsonPath)),
+       let sidecar = try? JSONDecoder().decode(JournalSidecar.self, from: data) {
+      return computeStateFromEntries(sidecar.entries)
+    }
+
+    // Fall back to markdown parsing
     guard FileManager.default.fileExists(atPath: path),
           let content = try? String(contentsOfFile: path, encoding: .utf8)
     else { return nil }
 
+    return parseMarkdown(content)
+  }
+
+  /// Compute the JSON sidecar path from a markdown journal path.
+  static func jsonSidecarPath(for mdPath: String) -> String {
+    if mdPath.hasSuffix(".md") {
+      return String(mdPath.dropLast(3)) + ".json"
+    }
+    return mdPath + ".json"
+  }
+
+  // MARK: - JSON Path
+
+  static func computeStateFromEntries(_ entries: [JournalEntry]) -> JournalState {
+    var navigations = 0
+    var sameScreen = 0
+    var crashes = 0
+    var issues = 0
+    var screens = Set<String>()
+    var tappedElements = Set<String>()
+    var lastFingerprint: String?
+    var lastScreenName: String?
+    var currentDepth = 0
+
+    for entry in entries {
+      if !entry.screenBefore.isEmpty {
+        screens.insert(entry.screenBefore)
+      }
+
+      let resultLower = entry.result.lowercased()
+      if resultLower.contains("navigated") {
+        navigations += 1
+        // Depth tracking
+        if entry.action.lowercased() == "back" {
+          currentDepth = max(0, currentDepth - 1)
+        } else {
+          currentDepth += 1
+        }
+      } else if resultLower.contains("same") {
+        sameScreen += 1
+      } else if resultLower.contains("crash") {
+        crashes += 1
+        currentDepth = 0
+      }
+
+      if entry.issue != nil {
+        issues += 1
+      }
+
+      if let after = entry.screenAfter, !after.isEmpty {
+        screens.insert(after)
+        lastFingerprint = after
+        lastScreenName = entry.screenAfterName
+      }
+
+      if !entry.screenBefore.isEmpty && !entry.target.isEmpty {
+        tappedElements.insert("\(entry.screenBefore):\(entry.target)")
+      }
+    }
+
+    return JournalState(
+      totalActions: entries.count,
+      navigations: navigations,
+      sameScreen: sameScreen,
+      crashes: crashes,
+      issues: issues,
+      screens: screens,
+      tappedElements: tappedElements,
+      lastFingerprint: lastFingerprint,
+      lastScreenName: lastScreenName,
+      currentDepth: currentDepth
+    )
+  }
+
+  // MARK: - Markdown Fallback
+
+  private static func parseMarkdown(_ content: String) -> JournalState {
     let lines = content.components(separatedBy: "\n")
 
     var totalActions = 0
@@ -96,6 +207,8 @@ enum SweepStateReader {
     var lastScreenName: String?
     var currentBeforeFingerprint: String?
     var currentTarget: String?
+    var currentDepth = 0
+    var currentAction: String?
 
     for line in lines {
       let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -108,11 +221,27 @@ enum SweepStateReader {
         }
       }
 
+      if trimmed.hasPrefix("- **Action**:") {
+        currentAction = trimmed.replacingOccurrences(of: "- **Action**: ", with: "").lowercased()
+      }
+
       if trimmed.hasPrefix("- **Result**:") {
         let result = trimmed.replacingOccurrences(of: "- **Result**: ", with: "").lowercased()
-        if result.contains("navigated") { navigations += 1 }
-        else if result.contains("same") { sameScreen += 1 }
-        else if result.contains("crash") { crashes += 1 }
+        if result.contains("navigated") {
+          navigations += 1
+          let isBack = currentAction == "back"
+            || currentTarget?.lowercased() == "back"
+          if isBack {
+            currentDepth = max(0, currentDepth - 1)
+          } else {
+            currentDepth += 1
+          }
+        } else if result.contains("same") {
+          sameScreen += 1
+        } else if result.contains("crash") {
+          crashes += 1
+          currentDepth = 0
+        }
       }
 
       if trimmed.hasPrefix("- **Issue**:") {
@@ -155,7 +284,8 @@ enum SweepStateReader {
       screens: screens,
       tappedElements: tappedElements,
       lastFingerprint: lastFingerprint,
-      lastScreenName: lastScreenName
+      lastScreenName: lastScreenName,
+      currentDepth: currentDepth
     )
   }
 

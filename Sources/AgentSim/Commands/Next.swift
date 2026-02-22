@@ -58,7 +58,8 @@ struct Next: AsyncParsableCommand {
       return Self.determineInstruction(
         journalPath: journalPath, journalState: journalState,
         analysis: nil, simulatorError: "\(error)",
-        bundleID: bundleID, maxScreens: maxScreens
+        bundleID: bundleID, maxScreens: maxScreens,
+        maxDepth: maxDepth
       )
     }
 
@@ -69,7 +70,8 @@ struct Next: AsyncParsableCommand {
       return Self.determineInstruction(
         journalPath: journalPath, journalState: journalState,
         analysis: nil, simulatorError: nil,
-        bundleID: bundleID, maxScreens: maxScreens
+        bundleID: bundleID, maxScreens: maxScreens,
+        maxDepth: maxDepth
       )
     }
     let analysis = ScreenAnalyzer.analyze(simNode)
@@ -77,7 +79,8 @@ struct Next: AsyncParsableCommand {
     return Self.determineInstruction(
       journalPath: journalPath, journalState: journalState,
       analysis: analysis, simulatorError: nil,
-      bundleID: bundleID, maxScreens: maxScreens
+      bundleID: bundleID, maxScreens: maxScreens,
+      maxDepth: maxDepth
     )
   }
 
@@ -89,7 +92,8 @@ struct Next: AsyncParsableCommand {
     analysis: ScreenAnalysis?,
     simulatorError: String?,
     bundleID: String?,
-    maxScreens: Int
+    maxScreens: Int,
+    maxDepth: Int = 80
   ) -> NextInstruction {
     // Simulator error → crashed
     if let error = simulatorError {
@@ -148,6 +152,24 @@ struct Next: AsyncParsableCommand {
       crashesDetected: journalState.crashes,
       journalPath: journalPath
     )
+
+    // Depth limit: only block forward navigation on new screens
+    if isNewScreen && journalState.currentDepth >= maxDepth {
+      return NextInstruction(
+        phase: .screenExhausted,
+        instruction: "Maximum depth reached (\(maxDepth)). Navigate back to parent screen.",
+        action: findBackAction(analysis),
+        currentScreen: screenSnapshot,
+        progress: progress,
+        afterAction: [
+          "sleep 1",
+          "agent-sim fingerprint --hash-only",
+          "agent-sim journal log --path \(shellEscape(journalPath)) --index \(journalState.totalActions + 1) --action back --target 'Back navigation' --before \(shellEscape(shortFP)) --before-name \(shellEscape(analysis.screenName)) --result <navigated|same-screen> --after <fingerprint> --after-name <screen-name>",
+          "agent-sim next --journal \(shellEscape(journalPath))"
+        ],
+        guardrails: standardGuardrails
+      )
+    }
 
     // Decide phase and action
     if isNewScreen && !untapped.isEmpty {

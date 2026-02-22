@@ -123,6 +123,27 @@ enum AXNodeBuilder {
     )
   }
 
+  /// Simulates an AXNavigationBar with an optional title and children.
+  static func navigationBar(
+    title: String = "",
+    at y: Double = 0,
+    children: [AXNode] = [],
+    depth: Int = 2
+  ) -> AXNode {
+    var navChildren = children
+    if !title.isEmpty && children.isEmpty {
+      navChildren = [text(title, at: (196, y + 22), size: (200, 20), depth: depth + 1)]
+    }
+    return node(
+      role: "AXNavigationBar",
+      label: title.isEmpty ? "" : title,
+      x: 0, y: y,
+      width: 393, height: 44,
+      depth: depth,
+      children: navChildren
+    )
+  }
+
   // MARK: - Compound Nodes
 
   /// Simulates the AXGroup that wraps iOS app content in the Simulator.

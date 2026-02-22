@@ -75,6 +75,11 @@ enum ScreenAnalyzer {
     let interactive = allElements.filter(\.isInteractive)
 
     let tabs = extractTabs(tree)
+
+    let navBarFrames = allElements
+      .filter { $0.role == "AXNavigationBar" }
+      .map { $0.frame }
+
     var navigation: [ScreenAnalysis.ClassifiedElement] = []
     var actions: [ScreenAnalysis.ClassifiedElement] = []
     var destructive: [ScreenAnalysis.ClassifiedElement] = []
@@ -95,7 +100,7 @@ enum ScreenAnalyzer {
         disabled.append(classified)
       } else if isDestructive(el) {
         destructive.append(classified)
-      } else if isNavigation(el) {
+      } else if isNavigation(el, navBarFrames: navBarFrames) {
         navigation.append(classified)
       } else {
         actions.append(classified)
@@ -129,7 +134,12 @@ enum ScreenAnalyzer {
     return destructiveLabels.contains(where: { name.contains($0) })
   }
 
-  private static func isNavigation(_ el: AXNode) -> Bool {
+  private static func isNavigation(_ el: AXNode, navBarFrames: [AXNode.Frame]) -> Bool {
+    // Check if the element is inside any AXNavigationBar
+    if navBarFrames.contains(where: { $0.containsCenter(of: el.frame) }) {
+      return true
+    }
+    // Fallback: Y-threshold + keyword match for custom nav bars
     let name = el.displayName.lowercased()
     if el.frame.centerY < DeviceConstants.navigationBarMaxY
       && navigationLabels.contains(where: { name.contains($0) })
@@ -229,8 +239,22 @@ enum ScreenAnalyzer {
   // MARK: - Screen Name Inference
 
   private static func inferScreenName(_ tree: AXNode) -> String {
-    // Look for navigation title (AXStaticText with large font near top)
     let flat = tree.flattened()
+
+    // Strategy 0: Use AXNavigationBar title if available
+    let navBars = flat.filter { $0.role == "AXNavigationBar" }
+    for navBar in navBars {
+      if !navBar.label.isEmpty {
+        return navBar.label
+      }
+      // Check AXStaticText children for a title
+      let titleTexts = navBar.children.filter {
+        $0.role == "AXStaticText" && !$0.displayName.isEmpty
+      }
+      if let title = titleTexts.first {
+        return title.displayName
+      }
+    }
 
     // Strategy 1: Find a prominent text element near the top of the screen
     let topTexts = flat
