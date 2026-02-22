@@ -100,13 +100,26 @@ Parse the JSON response. Branch on `phase`:
 | `crashed` | App died — screenshot, log, relaunch, continue |
 | `complete` | Done — go to Phase 3 |
 
-### Step 2: Think like a QA
+### Step 2: Think like a QA + Designer
 
 Before executing, reason briefly (1-2 sentences):
 
 - What do I expect will happen?
 - Is this navigation, a form input, a destructive action?
 - Could this crash or get stuck?
+
+Also note UX observations as you go — things a QA tester wouldn't report but a product designer would: Is this feature buried too deep? Is there no indication of pending items on the parent screen? Is important content below the fold? Are related actions scattered across unrelated screens?
+
+Record these as HTML comments in the journal using `--note`:
+
+```bash
+agent-sim journal log --path "$JOURNAL" \
+  --index <N> --action tap --target "<element>" \
+  ... \
+  --note "<!-- UX: Forms are 3 taps deep from Home with no badge indicating pending forms -->"
+```
+
+These won't interfere with BDD parsing but will feed the UX review in Phase 3.
 
 This expectation is what makes the journal entry replayable — it records what *should* happen, not just what *did* happen.
 
@@ -193,7 +206,22 @@ Screen 2/?: Onboarding (4 interactive)
    agent-sim journal summary --path "$JOURNAL"
    ```
 
-2. **Final report**
+2. **UX Review**
+
+   Read back through your journal entries (especially `<!-- UX: ... -->` comments) and the navigation graph you built during the sweep. For each of the seven lenses in `Templates/ux-review.md`, ask: did I observe anything during the sweep that violates this principle?
+
+   Write the UX Review following the template structure. Be opinionated — cite specific screens and flows you visited, reference the HIG principles in the template comments, and propose concrete fixes. Skip any lens where you observed nothing relevant.
+
+   Save the output:
+
+   ```bash
+   # Write the UX review to the journals directory
+   cat > "$JOURNALS/ux-review.md" << 'REVIEW'
+   <your UX review content following Templates/ux-review.md>
+   REVIEW
+   ```
+
+3. **Final report**
 
    ```
    ## Sweep Complete
@@ -211,6 +239,10 @@ Screen 2/?: Onboarding (4 interactive)
 
    ### BDD Scenarios Recorded
    <count, breakdown by screen>
+
+   ### UX Review
+   <top 3 recommendations from ux-review.md, summarized>
+   Full review: $JOURNALS/ux-review.md
 
    Next: `/agentsim:apply` to fix findings, `/agentsim:replay` to verify scenarios pass.
    ```
