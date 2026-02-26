@@ -24,8 +24,12 @@ done
 
 # Copy non-binary assets
 cp -R "$ROOT/commands" "$DIST/"
+cp -R "$ROOT/skills" "$DIST/"
 cp -R "$ROOT/Templates" "$DIST/"
 cp -R "$ROOT/references" "$DIST/"
+
+# Copy Claude Code plugin manifest
+cp -R "$ROOT/.claude-plugin" "$DIST/"
 
 # Strip debug symbols for smaller size
 strip -x "$DIST/agent-sim" 2>/dev/null || true

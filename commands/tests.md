@@ -1,5 +1,4 @@
 ---
-name: agentsim:tests
 description: "Turn sweep journal into tests — analyze scenarios, choose the right test level, generate code"
 ---
 
