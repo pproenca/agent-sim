@@ -1,4 +1,5 @@
 ---
+name: agentsim:replay
 description: "Replay BDD scenarios from a sweep journal — regression testing and XCTest generation"
 ---
 

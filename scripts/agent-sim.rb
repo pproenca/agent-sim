@@ -29,15 +29,41 @@ class AgentSim < Formula
       (lib/"agent-sim").install "#{fw}.framework"
     end
 
-    # Non-binary assets (commands, templates, references)
+    # Non-binary assets (commands, skills, templates, references)
     (lib/"agent-sim").install "commands"
+    (lib/"agent-sim").install "skills"
     (lib/"agent-sim").install "Templates"
     (lib/"agent-sim").install "references"
+
+    # Claude Code plugin manifest
+    (lib/"agent-sim").install ".claude-plugin"
 
     # Rewrite rpath so the binary finds frameworks in lib/agent-sim/
     system "install_name_tool", "-add_rpath", "#{lib}/agent-sim", bin/"agent-sim"
     # Re-sign after modifying load commands (required on Apple Silicon)
     system "codesign", "--force", "--sign", "-", bin/"agent-sim"
+  end
+
+  def post_install
+    # Register as Claude Code plugin
+    claude_settings = Pathname.new(Dir.home)/".claude"/"settings.json"
+    plugin_path = "#{lib}/agent-sim"
+
+    if claude_settings.exist?
+      require "json"
+      settings = JSON.parse(claude_settings.read)
+      plugins = settings.fetch("plugins", [])
+      unless plugins.any? { |p| p.include?("agent-sim") }
+        plugins << plugin_path
+        settings["plugins"] = plugins
+        claude_settings.write(JSON.pretty_generate(settings) + "\n")
+        ohai "Registered agent-sim as Claude Code plugin"
+      end
+    else
+      claude_settings.dirname.mkpath
+      claude_settings.write(JSON.pretty_generate({ "plugins" => [plugin_path] }) + "\n")
+      ohai "Registered agent-sim as Claude Code plugin"
+    end
   end
 
   def caveats
@@ -49,6 +75,10 @@ class AgentSim < Formula
       Quick start:
         open -a Simulator
         agent-sim status
+
+      Claude Code plugin:
+        agent-sim is automatically registered as a Claude Code plugin.
+        Restart Claude Code to use /agentsim:new, /agentsim:replay, etc.
     EOS
   end
 

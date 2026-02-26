@@ -27,8 +27,8 @@ struct Init: ParsableCommand {
   var force = false
 
   func run() throws {
-    let resolvedScope = try resolveScope()
     let resolvedTools = resolveTools()
+    let resolvedScope = try resolveScope(for: resolvedTools)
 
     let configPath: String
     let journalsDir: String
@@ -148,7 +148,7 @@ struct Init: ParsableCommand {
 
   // MARK: - Scope Resolution
 
-  private func resolveScope() throws -> ProjectConfig.Config.Scope {
+  private func resolveScope(for tools: [String]) throws -> ProjectConfig.Config.Scope {
     if let scope {
       guard let parsed = ProjectConfig.Config.Scope(rawValue: scope) else {
         throw InitError.invalidScope(scope)
@@ -161,9 +161,15 @@ struct Init: ParsableCommand {
     print("")
     print("  1. project  — .agent-sim/ in this directory (recommended)")
     print("               Journals stay with the project. Committed or gitignored.")
+    if tools.contains("opencode") {
+      print("               OpenCode commands: .opencode/commands/agentsim/")
+    }
     print("")
     print("  2. user     — ~/.config/agent-sim/")
     print("               Shared across all projects. Journals in your home directory.")
+    if tools.contains("opencode") {
+      print("               OpenCode commands: ~/.config/opencode/commands/agentsim/")
+    }
     print("")
     print("Scope [1/2] (default: 1): ", terminator: "")
 

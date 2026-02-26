@@ -1,0 +1,17 @@
+{
+  "name": "agent-sim",
+  "description": "AI-driven iOS simulator automation for Claude Code — exploratory QA sweeps, BDD journaling, regression replay, design critiques",
+  "owner": {
+    "name": "Pedro Proenca",
+    "email": "admin@therocketgrowth.com"
+  },
+  "plugins": [
+    {
+      "name": "agentsim",
+      "source": ".",
+      "description": "AI-driven iOS simulator exploration — QA sweeps, BDD journaling, regression replay, Apple HIG design critiques, and test generation",
+      "category": "testing",
+      "homepage": "https://github.com/pproenca/agent-sim"
+    }
+  ]
+}

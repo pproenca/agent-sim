@@ -135,6 +135,83 @@ download() {
   green "Installed agent-sim to $INSTALL_DIR"
 }
 
+# --- Register Claude Code plugin ---
+register_claude_plugin() {
+  local CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+  local PLUGIN_PATH="~/.local/lib/agent-sim"
+
+  # Check if .claude-plugin exists in install dir (new tarballs include it)
+  if [[ ! -d "$INSTALL_DIR/.claude-plugin" ]]; then
+    dim "  No .claude-plugin in install — skipping Claude Code registration."
+    return
+  fi
+
+  # Create ~/.claude if it doesn't exist
+  mkdir -p "$HOME/.claude"
+
+  # If settings.json doesn't exist, create it with the plugin
+  if [[ ! -f "$CLAUDE_SETTINGS" ]]; then
+    cat > "$CLAUDE_SETTINGS" <<SETTINGSEOF
+{
+  "plugins": [
+    "$PLUGIN_PATH"
+  ]
+}
+SETTINGSEOF
+    green "Registered agent-sim plugin with Claude Code"
+    return
+  fi
+
+  # Check if already registered
+  if grep -q "agent-sim" "$CLAUDE_SETTINGS" 2>/dev/null; then
+    dim "  Claude Code plugin already registered."
+    return
+  fi
+
+  # Add to existing plugins array (or create it)
+  if grep -q '"plugins"' "$CLAUDE_SETTINGS" 2>/dev/null; then
+    # Append to existing plugins array — insert before the closing bracket
+    # Use python for reliable JSON manipulation (available on macOS)
+    if command -v python3 &>/dev/null; then
+      python3 -c "
+import json, sys
+with open('$CLAUDE_SETTINGS', 'r') as f:
+    settings = json.load(f)
+plugins = settings.get('plugins', [])
+if '$PLUGIN_PATH' not in plugins:
+    plugins.append('$PLUGIN_PATH')
+    settings['plugins'] = plugins
+    with open('$CLAUDE_SETTINGS', 'w') as f:
+        json.dump(settings, f, indent=2)
+        f.write('\n')
+"
+      green "Registered agent-sim plugin with Claude Code"
+    else
+      echo ""
+      dim "  Could not auto-register plugin. Add manually to $CLAUDE_SETTINGS:"
+      echo "    \"plugins\": [\"$PLUGIN_PATH\"]"
+    fi
+  else
+    # No plugins key — add it
+    if command -v python3 &>/dev/null; then
+      python3 -c "
+import json
+with open('$CLAUDE_SETTINGS', 'r') as f:
+    settings = json.load(f)
+settings['plugins'] = ['$PLUGIN_PATH']
+with open('$CLAUDE_SETTINGS', 'w') as f:
+    json.dump(settings, f, indent=2)
+    f.write('\n')
+"
+      green "Registered agent-sim plugin with Claude Code"
+    else
+      echo ""
+      dim "  Could not auto-register plugin. Add manually to $CLAUDE_SETTINGS:"
+      echo "    \"plugins\": [\"$PLUGIN_PATH\"]"
+    fi
+  fi
+}
+
 # --- Verify ---
 verify() {
   if ! command -v agent-sim &>/dev/null; then
@@ -159,12 +236,6 @@ verify() {
   agent-sim --version 2>/dev/null || agent-sim --help 2>&1 | head -1
   echo ""
   green "Ready. Run: agent-sim boot"
-
-  # Hint about updating existing projects
-  if [[ -f ".agent-sim/manifest.json" ]]; then
-    echo ""
-    dim "Tip: Run 'agent-sim update' to sync commands in this project."
-  fi
 }
 
 # --- Main ---
@@ -175,5 +246,7 @@ echo ""
 check_existing
 echo ""
 download
+echo ""
+register_claude_plugin
 echo ""
 verify

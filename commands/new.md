@@ -1,4 +1,5 @@
 ---
+name: agentsim:new
 description: "Exploratory QA sweep — think like a tester, journal BDD scenarios, cover the app"
 ---
 

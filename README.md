@@ -6,13 +6,37 @@ Built on [FBSimulatorControl](https://github.com/facebook/idb) (Meta's IDB frame
 
 ## Install
 
+### Claude Code plugin (recommended)
+
+Install directly from Claude Code:
+
+```
+/install agentsim from pproenca/agent-sim
+```
+
+This installs the commands, skills, and templates. You still need the CLI binary — install it with Homebrew or curl below.
+
+### CLI binary
+
 ```bash
-# Homebrew
+# Homebrew (installs CLI + registers Claude Code plugin)
 brew install pproenca/tap/agent-sim
 
-# or curl (installs to ~/.local)
+# or curl (installs to ~/.local + registers Claude Code plugin)
 curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
 ```
+
+Both installers also register agent-sim as a Claude Code plugin automatically.
+
+### Claude Code commands
+
+After installation, these commands are available:
+
+- `/agentsim:new` — Exploratory QA sweep
+- `/agentsim:replay` — Replay BDD scenarios
+- `/agentsim:apply` — Apply findings from a sweep
+- `/agentsim:critique` — Apple HIG design critique
+- `/agentsim:tests` — Generate tests from sweep journal
 
 ### Requirements
 

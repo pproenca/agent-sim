@@ -1,5 +1,9 @@
 {
   "name": "agentsim",
   "version": "0.1.6",
-  "description": "AI-driven iOS simulator exploration — QA sweeps, BDD journaling, regression replay"
+  "description": "AI-driven iOS simulator exploration — QA sweeps, BDD journaling, regression replay",
+  "author": {
+    "name": "Pedro Proenca",
+    "email": "admin@therocketgrowth.com"
+  }
 }
