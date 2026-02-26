@@ -1,0 +1,149 @@
+[0/1] Planning build
+Test Suite 'Selected tests' started at 2026-02-22 11:30:08.537.
+Test Suite 'AgentSimPackageTests.xctest' started at 2026-02-22 11:30:08.544.
+Test Suite 'AgentSimPackageTests.xctest' passed at 2026-02-22 11:30:08.544.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-02-22 11:30:08.544.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.008) seconds
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Journal — file operations round-trip" started.
+◇ Suite "BoxMapping — persistence round-trips" started.
+◇ Suite "Fingerprinter — screen identity hashing" started.
+◇ Suite "ScreenAnalyzer — element classification" started.
+◇ Suite "SweepStateReader — journal markdown parsing" started.
+◇ Suite "Coordinate transforms — AXTreeReader utilities" started.
+◇ Suite "Next.determineInstruction — state machine transitions" started.
+◇ Suite "ProjectConfig — configuration resolution" started.
+◇ Suite "AXNode — model properties" started.
+◇ Suite "Structural — API contracts and type safety" started.
+◇ Suite "Reverse coordinate transform — tap pipeline accuracy" started.
+◇ Suite "NetworkLogParser — HTTP log parsing" started.
+◇ Test "buildElements assigns sequential box numbers across all categories" started.
+◇ Test "Empty elements array saves valid JSON" started.
+◇ Test "Loading from nonexistent file throws" started.
+◇ Test "Save then load round-trips all entries" started.
+◇ Test "SweepStateReader correctly identifies tapped elements for 'already visited' checks" started.
+◇ Test "Elements whose displayName falls back to role still contribute to fingerprint" started.
+◇ Test "SweepStateReader parses journal with issues and crash" started.
+◇ Test "SweepStateReader parses multi-action journal correctly" started.
+◇ Test "Screen name from AXNavigationBar child AXStaticText" started.
+◇ Test "SweepStateReader handles journal where all actions stay on same screen" started.
+◇ Test "Same tree produces the same fingerprint (deterministic)" started.
+◇ Test "shortFingerprint returns first 8 characters" started.
+◇ Test "Nav bar title wins over top text" started.
+◇ Test "shortFingerprint(from:) returns first 8 chars of a full fingerprint string" started.
+◇ Test "Disabled button is classified as disabled" started.
+◇ Test "Unselected tabs appear as tap-tab suggestions" started.
+◇ Test "Screen name inferred from top static text" started.
+◇ Test "Screen name falls back to 'Unknown Screen' when no text exists" started.
+◇ Test "Elements with zero width are excluded from fingerprint" started.
+◇ Test "elementCount includes all nodes in tree" started.
+◇ Test "Extracts unique screen fingerprints" started.
+◇ Test "Button with 'Sign Out' label is classified as destructive (case-insensitive)" started.
+◇ Test "Action elements appear as tap suggestions" started.
+◇ Test "Fingerprint has expected length (32 hex chars)" started.
+◇ Test "Different element positions produce different fingerprints" started.
+◇ Test "Counts crash results" started.
+◇ Test "Button with 'remove' in label is classified as destructive" started.
+◇ Test "Tracks tapped elements as fingerprint:target pairs" started.
+◇ Test "Selected tab has isSelected=true" started.
+◇ Test "findBackAction prioritizes Back button over Close button" started.
+◇ Test "Counts same-screen results" started.
+◇ Test "Deduplicates screen fingerprints" started.
+◇ Test "'Back' button far from top (y >= 100) is classified as action, not navigation" started.
+◇ Test "Returns nil for nonexistent journal path" started.
+◇ Test "'Close' button near top is classified as navigation" started.
+◇ Test "Depth tracked from markdown — forward navigations increase depth" started.
+◇ Test "Empty journal (header only) returns zero counts" started.
+◇ Test "'Back' button near top of screen (y < 100) is classified as navigation" started.
+◇ Test "Button inside nav bar is classified as navigation regardless of label" started.
+◇ Test "Screen limit reached produces complete phase" started.
+◇ Test "JSON sidecar computes correct JournalState" started.
+◇ Test "Depth computed correctly from navigation sequence" started.
+◇ Test "No AX tree produces crashed phase with launch recovery" started.
+◇ Test "Tab buttons appear as actions — tapping them follows the exploring phase" started.
+◇ Test "No JSON sidecar → falls back to markdown" started.
+◇ Test "Depth resets to 0 on crash" started.
+◇ Test "Tabs are extracted from AXTabGroup children" started.
+◇ Test "Known screen with untapped elements produces exploring phase" started.
+◇ Test "countByRole tallies all roles in tree" started.
+◇ Test "Progress reflects journal state" started.
+◇ Test "interactiveCount matches number of interactive elements" started.
+◇ Test "Counts navigated results" started.
+◇ Test "Default config has project scope and standard journals path" started.
+◇ Test "All actions tapped and no back button produces screenExhausted with swipe" started.
+◇ Test "displayName falls back to role as last resort" started.
+◇ Test "New screen with untapped elements produces newScreen phase" started.
+◇ Test "Parses action count from ### headings" started.
+◇ Test "Button with 'delete' label is classified as destructive" started.
+◇ Test "Scroll-down suggested when screen height > 900" started.
+◇ Test "Config round-trips through Codable" started.
+◇ Test "Config scope encodes as string" started.
+◇ Test "Device pin/unpin round-trip in temp directory" started.
+◇ Test "Content extracts AXStaticText elements" started.
+◇ Test "'Delete' button inside nav bar is still destructive" started.
+◇ Test "Depth decrements on back navigation in JSON entries" started.
+◇ Test "collectInteractive returns only interactive elements from tree" started.
+◇ Test "collectInteractive on a tree with no interactive elements returns empty" started.
+◇ Test "Content is capped at 20 elements" started.
+◇ Test "totalCount returns total node count including root" started.
+◇ Test "Screen name from AXNavigationBar label" started.
+◇ Test "'Back' button at y=101 outside nav bar is classified as action" started.
+◇ Test "Non-interactive roles are excluded" started.
+◇ Test "Interactive roles are recognized" started.
+◇ Test "journalsDirectory resolves absolute path unchanged" started.
+◇ Test "maxDepth reached on new screen produces screenExhausted" started.
+◇ Test "findBackAction falls back to swipe when no navigation buttons exist" started.
+◇ Test "displayName falls back to identifier when all text fields are empty" started.
+◇ Test "Already-tapped elements are excluded from untapped count" started.
+◇ Test "Exhausted screen with back button navigates back" started.
+◇ Test "centerX is midpoint of x and width" started.
+◇ Test "flattened returns all descendants in order" started.
+◇ Test "displayName prefers label first" started.
+◇ Test "centerY is midpoint of y and height" started.
+◇ Test "Tracks last fingerprint and screen name" started.
+◇ Test "Counts issues from Issue lines" started.
+◇ Test "offsetBy with negative deltas shifts position forward" started.
+◇ Test "displayName falls back to accessibilityDescription when label is empty" started.
+◇ Test "JSON sidecar exists → reads from JSON, not markdown" started.
+◇ Test "ScreenAnalysis encodes to valid JSON" started.
+◇ Test "offsetBy subtracts dx/dy from position, preserves size" started.
+◇ Test "Frame.zero has all fields at zero" started.
+◇ Test "Non-CFNetwork log entries appear as raw entries" started.
+◇ Test "displayName falls back to value when label and description are empty" started.
+◇ Test "Button inside nav bar with no keyword label is still navigation" started.
+◇ Test "Simulator error produces crashed phase" started.
+◇ Test "flattened returns self when node has no children" started.
+◇ Test "Extracts duration from summary line" started.
+◇ Test "NextInstruction encodes to valid JSON" started.
+◇ Test "Extracts method and URL from request line" sterror: Exited with unexpected signal code 5
+arted.
+◇ Test "Parses NSURLError code from error message" started.
+◇ Test "Correlates multiple entries for the same task" started.
+◇ Test "AXNode is Sendable (passable across concurrency boundaries)" started.
+◇ Test "formatTimestamp extracts HH:mm:ss from full timestamp" started.
+◇ Test "maxDepth reached on known screen still allows exploring" started.
+◇ Test "Round-trip preserves coordinates at origin (0,0 in device space)" started.
+◇ Test "Parses HTTP status 200 response" started.
+◇ Test "Empty nav bar falls through to existing Strategy 1" started.
+◇ Test "BoxEntry round-trips through Codable" started.
+◇ Test "All error types produce non-empty descriptions" started.
+◇ Test "NetworkLogParser.ParseResult encodes to valid JSON" started.
+◇ Test "Round-trip preserves coordinates for iPhone 16 Pro (different device size)" started.
+◇ Test "Parses HTTP status 401 as error" started.
+◇ Test "SwipeDirection.left swipes from right to left" started.
+◇ Test "SweepPhase raw values are stable snake_case strings" started.
+◇ Test "Empty input returns empty result with diagnosticsEnabled=false" started.
+◇ Test "Round-trip preserves coordinates at bottom-right corner" started.
+◇ Test "BootedDevice is Sendable" started.
+◇ Test "AXNode encodes to valid JSON" started.
+◇ Test "Round-trip preserves center coordinates for iPhone 16" started.
+◇ Test "SwipeDirection.right swipes from left to right" started.
+◇ Test "No point in 0..393 x 0..852 drifts more than 1pt after round-trip" started.
+◇ Test "SwipeDirection.down swipes from center-top to center-bottom" started.
+◇ Test "SwipeDirection.up swipes from center-bottom to center-top" started.
+✔ Test "buildElements assigns sequential box numbers across all categories" passed after 0.015 seconds.
+✘ Test "Selected tab has isSelected=true" recorded an issue at ScreenAnalyzerTests.swift:158:5: Expectation failed: (analysis.tabs[0].isSelected → false) == true
+Swift/ContiguousArrayBuffer.swift:691: Fatal error: Index out of range

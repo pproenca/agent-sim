@@ -1,0 +1,23 @@
+# Apple Human Interface Guidelines — iOS design focus
+# Crawl with: python3 scripts/scrape_apple_docs.py --crawl --depth 2 --list hig-urls.txt
+#
+# Starting points cover the full HIG content tree relevant to iOS.
+# Components needs depth 2: categories → sub-categories → individual components.
+
+# iOS platform overview (widgets, quick actions, multitasking, status bar, etc.)
+https://developer.apple.com/design/human-interface-guidelines/designing-for-ios
+
+# Foundations: color, typography, layout, accessibility, icons, SF Symbols, motion, etc.
+https://developer.apple.com/design/human-interface-guidelines/foundations
+
+# Patterns: navigation, onboarding, modality, loading, feedback, haptics, notifications, etc.
+https://developer.apple.com/design/human-interface-guidelines/patterns
+
+# Components: buttons, lists, menus, pickers, sheets, tab bars, search, alerts, etc.
+https://developer.apple.com/design/human-interface-guidelines/components
+
+# Inputs: gestures, keyboards, Apple Pencil, action button, camera control, etc.
+https://developer.apple.com/design/human-interface-guidelines/inputs
+
+# Technologies: augmented reality, machine learning, Apple Pay, Sign in with Apple, etc.
+https://developer.apple.com/design/human-interface-guidelines/technologies

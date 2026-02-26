@@ -1,0 +1,488 @@
+Fetching https://github.com/apple/swift-argument-parser.git from cache
+Fetched https://github.com/apple/swift-argument-parser.git from cache (0.40s)
+Computing version for https://github.com/apple/swift-argument-parser.git
+Computed https://github.com/apple/swift-argument-parser.git at 1.7.0 (0.44s)
+Creating working copy for https://github.com/apple/swift-argument-parser.git
+Working copy of https://github.com/apple/swift-argument-parser.git resolved at 1.7.0
+[1/1] Compiling plugin GenerateManual
+[2/2] Compiling plugin GenerateDoccReference
+Building for debugging...
+[2/20] /Users/pedroproenca/Documents/Projects/agent-sim_mutated/.build/arm64-apple-macosx/debug/AgentSimPackageTests.derived/runner.swift
+[3/20] Write sources
+[3/20] Write AgentSim-entitlement.plist
+[9/20] Write sources
+[10/20] Copying XCTestBootstrap.framework
+[10/20] Copying FBSimulatorControl.framework
+[10/20] Copying FBDeviceControl.framework
+[13/20] Copying FBControlCore.framework
+[14/20] Write swift-version-F7C8E5C54B626D.txt
+[16/22] Compiling ArgumentParserToolInfo ToolInfo.swift
+[17/22] Emitting module ArgumentParserToolInfo
+[18/69] Compiling ArgumentParser CommandConfiguration.swift
+[19/69] Compiling ArgumentParser CommandGroup.swift
+[20/69] Compiling ArgumentParser EnumerableFlag.swift
+[21/69] Compiling ArgumentParser ExpressibleByArgument.swift
+[22/69] Compiling ArgumentParser ParsableArguments.swift
+[23/74] Compiling ArgumentParser NameSpecification.swift
+[24/74] Compiling ArgumentParser Option.swift
+[25/74] Compiling ArgumentParser OptionGroup.swift
+[26/74] Compiling ArgumentParser ParentCommand.swift
+[27/74] Compiling ArgumentParser AsyncParsableCommand.swift
+[28/74] Compiling ArgumentParser Platform.swift
+[29/74] Compiling ArgumentParser SequenceExtensions.swift
+[30/74] Compiling ArgumentParser StringExtensions.swift
+[31/74] Compiling ArgumentParser SwiftExtensions.swift
+[32/74] Compiling ArgumentParser Tree.swift
+[33/74] Compiling ArgumentParser CodingKeyValidator.swift
+[34/74] Compiling ArgumentParser NonsenseFlagsValidator.swift
+[35/74] Compiling ArgumentParser ParsableArgumentsValidation.swift
+[36/74] Compiling ArgumentParser PositionalArgumentsValidator.swift
+[37/74] Compiling ArgumentParser UniqueNamesValidator.swift
+[38/74] Emitting module ArgumentParser
+[39/74] Compiling ArgumentParser ParserError.swift
+[40/74] Compiling ArgumentParser SplitArguments.swift
+[41/74] Compiling ArgumentParser DumpHelpGenerator.swift
+[42/74] Compiling ArgumentParser HelpCommand.swift
+[43/74] Compiling ArgumentParser HelpGenerator.swift
+[44/74] Compiling ArgumentParser ParsableCommand.swift
+[45/74] Compiling ArgumentParser ArgumentDecoder.swift
+[46/74] Compiling ArgumentParser ArgumentDefinition.swift
+[47/74] Compiling ArgumentParser ArgumentSet.swift
+[48/74] Compiling ArgumentParser CommandParser.swift
+[49/74] Compiling ArgumentParser InputKey.swift
+[50/74] Compiling ArgumentParser InputOrigin.swift
+[51/74] Compiling ArgumentParser Name.swift
+[52/74] Compiling ArgumentParser Parsed.swift
+[53/74] Compiling ArgumentParser ParsedValues.swift
+[54/74] Compiling ArgumentParser ArgumentHelp.swift
+[55/74] Compiling ArgumentParser ArgumentVisibility.swift
+[56/74] Compiling ArgumentParser CompletionKind.swift
+[57/74] Compiling ArgumentParser Errors.swift
+[58/74] Compiling ArgumentParser Flag.swift
+[59/74] Compiling ArgumentParser MessageInfo.swift
+[60/74] Compiling ArgumentParser UsageGenerator.swift
+[61/74] Compiling ArgumentParser CollectionExtensions.swift
+[62/74] Compiling ArgumentParser Foundation.swift
+[63/74] Compiling ArgumentParser Mutex.swift
+[64/74] Compiling ArgumentParser BashCompletionsGenerator.swift
+[65/74] Compiling ArgumentParser CompletionsGenerator.swift
+[66/74] Compiling ArgumentParser FishCompletionsGenerator.swift
+[67/74] Compiling ArgumentParser ZshCompletionsGenerator.swift
+[68/74] Compiling ArgumentParser Argument.swift
+[69/74] Compiling ArgumentParser ArgumentDiscussion.swift
+[70/107] Compiling AgentSimLib AgentSim.swift
+[71/107] Compiling AgentSimLib Assert.swift
+[72/107] Compiling AgentSimLib ConfigCmd.swift
+[73/107] Compiling AgentSimLib Describe.swift
+[74/110] Compiling AgentSimLib Fingerprinter.swift
+[75/110] Compiling AgentSimLib JSONOutput.swift
+[76/110] Compiling AgentSimLib NetworkLogParser.swift
+[77/110] Compiling AgentSimLib Explore.swift
+[78/110] Compiling AgentSimLib FingerprintCmd.swift
+[79/110] Compiling AgentSimLib Init.swift
+[80/110] Compiling AgentSimLib Journal.swift
+[81/110] Compiling AgentSimLib HIDInteractor.swift
+[82/110] Compiling AgentSimLib KeyCode.swift
+[83/110] Compiling AgentSimLib TextToHIDEvents.swift
+[84/110] Compiling AgentSimLib Use.swift
+[85/110] Compiling AgentSimLib AXTreeReader.swift
+[86/110] Compiling AgentSimLib AccessibilityFetcher.swift
+[87/110] Compiling AgentSimLib DeviceConstants.swift
+[88/110] Compiling AgentSimLib SweepState.swift
+[89/110] Compiling AgentSimLib BridgeQueues.swift
+[90/110] Compiling AgentSimLib FutureBridge.swift
+[91/110] Emitting module AgentSimLib
+[92/110] Compiling AgentSimLib ShellEscape.swift
+[93/110] Compiling AgentSimLib SimulatorBridge.swift
+[94/110] Compiling AgentSimLib SimulatorControlFactory.swift
+[95/110] Compiling AgentSimLib Launch.swift
+[96/110] Compiling AgentSimLib Network.swift
+[97/110] Compiling AgentSimLib Next.swift
+[98/110] Compiling AgentSimLib Screenshot.swift
+[99/110] Compiling AgentSimLib Status.swift
+[100/110] Compiling AgentSimLib Swipe.swift
+[101/110] Compiling AgentSimLib Tap.swift
+[102/110] Compiling AgentSimLib TypeText.swift
+[103/110] Compiling AgentSimLib ProjectConfig.swift
+[104/110] Compiling AgentSimLib ScreenAnalysis.swift
+[105/110] Compiling AgentSimLib ScreenAnnotator.swift
+[106/126] Compiling AgentSim AgentSimEntry.swift
+[107/126] Emitting module AgentSim
+[107/126] Write Objects.LinkFileList
+ld: warning: duplicate -rpath '@executable_path' ignored
+[108/126] Linking AgentSim
+[109/126] Applying AgentSim
+[111/126] Compiling AgentSimTests CoordinateTransformTests.swift
+[112/126] Compiling AgentSimTests FingerprinterTests.swift
+[113/127] Compiling AgentSimTests ReverseTransformTests.swift
+[114/127] Compiling AgentSimTests AXNodeBuilder.swift
+[115/127] Compiling AgentSimTests StructuralTests.swift
+[116/127] Compiling AgentSimTests JournalFixtures.swift
+[117/127] Compiling AgentSimTests ScreenAnalyzerTests.swift
+[118/127] Compiling AgentSimTests AXNodeTests.swift
+[119/127] Compiling AgentSimTests BoxMappingTests.swift
+[120/127] Compiling AgentSimTests NextInstructionTests.swift
+[121/127] Compiling AgentSimTests ProjectConfigTests.swift
+[122/127] Emitting module AgentSimTests
+[123/127] Compiling AgentSimTests JournalIntegrationTests.swift
+[124/127] Compiling AgentSimTests NetworkLogParserTests.swift
+[125/127] Compiling AgentSimTests SweepStateReaderTests.swift
+[126/129] Compiling AgentSimPackageTests runner.swift
+[127/129] Emitting module AgentSimPackageTests
+[127/129] Write Objects.LinkFileList
+[128/129] Linking AgentSimPackageTests
+Build complete! (17.23s)
+Test Suite 'Selected tests' started at 2026-02-22 11:38:25.750.
+Test Suite 'AgentSimPackageTests.xctest' started at 2026-02-22 11:38:25.758.
+Test Suite 'AgentSimPackageTests.xctest' passed at 2026-02-22 11:38:25.759.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'Selected tests' passed at 2026-02-22 11:38:25.759.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.008) seconds
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "BoxMapping — persistence round-trips" started.
+◇ Suite "NetworkLogParser — HTTP log parsing" started.
+◇ Suite "ScreenAnalyzer — element classification" started.
+◇ Suite "Journal — file operations round-trip" started.
+◇ Suite "ProjectConfig — configuration resolution" started.
+◇ Suite "SweepStateReader — journal markdown parsing" started.
+◇ Suite "AXNode — model properties" started.
+◇ Suite "Coordinate transforms — AXTreeReader utilities" started.
+◇ Test "Loading from nonexistent file throws" started.
+◇ Suite "Structural — API contracts and type safety" started.
+◇ Test "Save then load round-trips all entries" started.
+◇ Suite "Fingerprinter — screen identity hashing" started.
+◇ Suite "Next.determineInstruction — state machine transitions" started.
+◇ Test "Empty elements array saves valid JSON" started.
+◇ Test "Parses HTTP status 200 response" started.
+◇ Test "Parses NSURLError code from error message" started.
+◇ Suite "Reverse coordinate transform — tap pipeline accuracy" started.
+◇ Test "Correlates multiple entries for the same task" started.
+◇ Test "Extracts duration from summary line" started.
+◇ Test "Non-CFNetwork log entries appear as raw entries" started.
+◇ Test "Extracts method and URL from request line" started.
+◇ Test "formatTimestamp extracts HH:mm:ss from full timestamp" started.
+◇ Test "Empty input returns empty result with diagnosticsEnabled=false" started.
+◇ Test "Action elements appear as tap suggestions" started.
+◇ Test "Empty nav bar falls through to existing Strategy 1" started.
+◇ Test "Parses HTTP status 401 as error" started.
+◇ Test "Button inside nav bar is classified as navigation regardless of label" started.
+◇ Test "Strategy 1 picks widest text among top elements" started.
+◇ Test "Nav bar with button and text children uses text for screen name" started.
+◇ Test "Button with 'Sign Out' label is classified as destructive (case-insensitive)" started.
+◇ Test "Tabs are extracted from AXTabGroup children" started.
+◇ Test "buildElements assigns sequential box numbers across all categories" started.
+◇ Test "interactiveCount matches number of interactive elements" started.
+◇ Test "'Back' button at y=101 outside nav bar is classified as action" started.
+◇ Test "Screen name from AXNavigationBar child AXStaticText" started.
+◇ Test "'Delete' button inside nav bar is still destructive" started.
+◇ Test "Button inside nav bar with no keyword label is still navigation" started.
+◇ Test "Content is capped at 20 elements" started.
+◇ Test "'Close' button near top is classified as navigation" started.
+◇ Test "'Back' button near top of screen (y < 100) is classified as navigation" started.
+◇ Test "Disabled button is classified as disabled" started.
+◇ Test "Default config has project scope and standard journals path" started.
+◇ Test "'Back' button far from top (y >= 100) is classified as action, not navigation" started.
+◇ Test "Screen name falls back to 'Unknown Screen' when no text exists" started.
+◇ Test "Nav bar title wins over top text" started.
+◇ Test "Screen name inferred from top static text" started.
+◇ Test "journalsDirectory resolves absolute path unchanged" started.
+◇ Test "Selected tab has isSelected=true" started.
+◇ Test "Button below nav bar is classified as action even when nav bar exists" started.
+◇ Test "Button with 'remove' in label is classified as destructive" started.
+◇ Test "Strategy 2 picks topmost large text when no top texts exist" started.
+◇ Test "Screen name from AXNavigationBar label" started.
+◇ Test "elementCount includes all nodes in tree" started.
+◇ Test "Button with 'delete' label is classified as destructive" started.
+◇ Test "Unselected tabs appear as tap-tab suggestions" started.
+◇ Test "Device pin/unpin round-trip in temp directory" started.
+◇ Test "screenAfter is nil when after string is empty" started.
+◇ Test "screenAfterName is nil when afterName string is empty" started.
+◇ Test "Content extracts AXStaticText elements" started.
+◇ Test "centerY is midpoint of y and height" started.
+◇ Test "Config round-trips through Codable" started.
+◇ Test "Config scope encodes as string" started.
+◇ Test "SweepStateReader parses multi-action journal correctly" started.
+◇ Test "flattened returns self when node has no children" started.
+◇ Test "Suggestion priorities are sequential — no duplicates" started.
+◇ Test "offsetBy subtracts dx/dy from position, preserves size" started.
+◇ Test "displayName prefers label first" started.
+◇ Test "Markdown includes after-name when present" started.
+◇ Test "offsetBy with negative deltas shifts position forward" started.
+◇ Test "Markdown heading uses action when target is empty" started.
+◇ Test "screenAfter preserves value when non-empty" started.
+◇ Test "coords field is nil when coords string is empty" started.
+◇ Test "SweepStateReader handles journal where all actions stay on same screen" started.
+◇ Test "screenAfterName preserves value when non-empty" started.
+◇ Test "Markdown includes before-name when present" started.
+◇ Test "Markdown heading uses target when target is non-empty" started.
+◇ Test "Markdown omits before-name separator when beforeName is empty" started.
+◇ Test "coords field preserves value when non-empty" started.
+◇ Test "SweepStateReader parses journal with issues and crash" started.
+◇ Test "SweepStateReader correctly identifies tapped elements for 'already visited' checks" started.
+◇ Test "Scroll-down suggested when screen height > 900" started.
+◇ Test "displayName falls back to role as last resort" started.
+◇ Test "displayName falls back to value when label and description are empty" started.
+◇ Test "Markdown omits after-name separator when afterName is empty" started.
+◇ Test "displayName falls back to accessibilityDescription when label is empty" started.
+◇ Test "centerX is midpoint of x and width" started.
+◇ Test "displayName falls back to identifier when all text fields are empty" started.
+◇ Test "Non-interactive roles are excluded" started.
+◇ Test "flattened returns all descendants in order" started.
+◇ Test "Frame.zero has all fields at zero" started.
+◇ Test "Interactive roles are recognized" started.
+◇ Test "No JSON sidecar → falls back to markdown" started.
+◇ Test "Counts same-screen results" started.
+◇ Test "Entries with issues count correctly" started.
+◇ Test "Entry with empty screenBefore is not added to tappedElements" started.
+◇ Test "Depth resets to 0 on crash" started.
+◇ Test "Deduplicates screen fingerprints" started.
+◇ Test "Markdown extractFingerprint returns nil for malformed lines" started.
+◇ Test "JSON sidecar computes correct JournalState" started.
+◇ Test "Counts issues from Issue lines" started.
+◇ Test "Returns nil for nonexistent journal path" started.
+◇ Test "Counts crash results" started.
+◇ Test "Empty journal (header only) returns zero counts" started.
+◇ Test "Forward-only navigation depth increments correctly" started.
+◇ Test "Entry with empty target is not added to tappedElements" started.
+◇ Test "Markdown forward-only navigations produce correct depth" started.
+◇ Test "Entries without issues have zero issue count" started.
+◇ Test "Tracks last fingerprint and screen name" started.
+◇ Test "Tracks tapped elements as fingerprint:target pairs" started.
+◇ Test "JSON sidecar exists → reads from JSON, not markdown" started.
+◇ Test "Depth tracked from markdown — forward navigations increase depth" started.
+◇ Test "Extracts unique screen fingerprints" started.
+◇ Test "Counts navigated results" started.
+◇ Test "Parses action count from ### headings" started.
+◇ Test "collectInteractive on a tree with no interactive elements returns empty" started.
+◇ Test "countByRole tallies all roles in tree" started.
+◇ Test "totalCount returns total node count including root" started.
+◇ Test "NextInstruction encodes to valid JSON" started.
+◇ Test "collectInteractive returns only interactive elements from tree" started.
+◇ Test "NetworkLogParser.ParseResult encodes to valid JSON" started.
+◇ Test "AXNode encodes to valid JSON" started.
+◇ Test "ScreenAnalysis encodes to valid JSON" started.
+◇ Test "findBackAction prioritizes Back button over Close button" started.
+◇ Test "Progress reflects journal state" started.
+◇ Test "AXNode is Sendable (passable across concurrency boundaries)" started.
+◇ Test "Different element positions produce different fingerprints" started.
+◇ Test "maxDepth reached on new screen produces screenExhausted" started.
+◇ Test "All error types produce non-empty descriptions" started.
+◇ Test "Same tree produces the same fingerprint (deterministic)" started.
+◇ Test "Depth decrements on back navigation in JSON entries" started.
+◇ Test "All actions tapped and no back button produces screenExhausted with swipe" started.
+◇ Test "shortFingerprint returns first 8 characters" started.
+◇ Test "findBackAction finds 'Done' dismiss button" started.
+◇ Test "BootedDevice is Sendable" started.
+◇ Test "Fingerprint has expected length (32 hex chars)" started.
+◇ Test "SweepPhase raw values are stable snake_case strings" started.
+◇ Test "Exhausted screen with back button navigates back" started.
+◇ Test "Screen limit reached produces complete phase" started.
+◇ Test "maxDepth reached on known screen still allows exploring" started.
+◇ Test "BoxEntry round-trips through Codable" started.
+◇ Test "Elements with zero width are excluded from fingerprint" started.
+◇ Test "findBackAction finds 'Dismiss' button" started.
+◇ Test "Elements whose displayName falls back to role still contribute to fingerprint" started.
+◇ Test "shortFingerprint(from:) returns first 8 chars of a full fingerprint string" started.
+◇ Test "No AX tree produces crashed phase with launch recovery" started.
+◇ Test "Simulator error produces crashed phase" started.
+◇ Test "Tab buttons appear as actions — tapping them follows the exploring phase" started.
+◇ Test "New screen with untapped elements produces newScreen phase" started.
+◇ Test "findBackAction falls back to swipe when no navigation buttons exist" started.
+◇ Test "findBackAction finds 'Cancel' dismiss button" started.
+◇ Test "Depth computed correctly from navigation sequence" started.
+◇ Test "Already-tapped elements are excluded from untapped count" started.
+◇ Test "Known screen with untapped elements produces exploring phase" started.
+◇ Test "Round-trip preserves center coordinates for iPhone 16" started.
+◇ Test "SwipeDirection.right swipes from left to right" started.
+◇ Test "No point in 0..393 x 0..852 drifts more than 1pt after round-trip" started.
+◇ Test "SwipeDirection.left swipes from right to left" started.
+◇ Test "Round-trip preserves coordinates for iPhone 16 Pro (different device size)" started.
+◇ Test "SwipeDirection.down swipes from center-top to center-bottom" started.
+◇ Test "Round-trip preserves coordinates at origin (0,0 in device space)" started.
+◇ Test "SwipeDirection.up swipes from center-bottom to center-top" started.
+◇ Test "Round-trip preserves coordinates at bottom-right corner" started.
+◇ Test case passing 1 argument role → "AXStaticText" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXImage" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXGroup" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXScrollArea" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXWindow" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXApplication" to "Non-interactive roles are excluded" started.
+◇ Test case passing 1 argument role → "AXButton" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXLink" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXTextField" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXSecureTextField" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXCell" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXCheckBox" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXRadioButton" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXSlider" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXSwitch" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXToggle" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXPopUpButton" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXComboBox" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXSegmentedControl" to "Interactive roles are recognized" started.
+◇ Test case passing 1 argument role → "AXTabGroup" to "Interactive roles are recognized" started.
+✔ Test "Non-CFNetwork log entries appear as raw entries" passed after 0.025 seconds.
+✔ Test "Empty input returns empty result with diagnosticsEnabled=false" passed after 0.025 seconds.
+✔ Test "Extracts method and URL from request line" passed after 0.026 seconds.
+✔ Test "Correlates multiple entries for the same task" passed after 0.026 seconds.
+✔ Test "Parses NSURLError code from error message" passed after 0.026 seconds.
+✔ Test "formatTimestamp extracts HH:mm:ss from full timestamp" passed after 0.025 seconds.
+✔ Test "Parses HTTP status 200 response" passed after 0.026 seconds.
+✔ Test "Extracts duration from summary line" passed after 0.026 seconds.
+✔ Test "Parses HTTP status 401 as error" passed after 0.025 seconds.
+✔ Test "Empty elements array saves valid JSON" passed after 0.026 seconds.
+✔ Test "buildElements assigns sequential box numbers across all categories" passed after 0.027 seconds.
+✔ Test "Save then load round-trips all entries" passed after 0.027 seconds.
+✔ Test "Action elements appear as tap suggestions" passed after 0.028 seconds.
+✔ Test "Empty nav bar falls through to existing Strategy 1" passed after 0.028 seconds.
+✔ Test "Button with 'Sign Out' label is classified as destructive (case-insensitive)" passed after 0.028 seconds.
+✔ Test "Loading from nonexistent file throws" passed after 0.028 seconds.
+✔ Test "'Back' button at y=101 outside nav bar is classified as action" passed after 0.028 seconds.
+✔ Test "Strategy 1 picks widest text among top elements" passed after 0.029 seconds.
+✔ Test "interactiveCount matches number of interactive elements" passed after 0.029 seconds.
+✔ Test "Nav bar with button and text children uses text for screen name" passed after 0.029 seconds.
+✔ Test "Default config has project scope and standard journals path" passed after 0.029 seconds.
+✔ Test "Button inside nav bar is classified as navigation regardless of label" passed after 0.029 seconds.
+✔ Test "Screen name from AXNavigationBar child AXStaticText" passed after 0.029 seconds.
+✔ Test "'Delete' button inside nav bar is still destructive" passed after 0.030 seconds.
+✔ Test "'Back' button near top of screen (y < 100) is classified as navigation" passed after 0.030 seconds.
+✔ Test "journalsDirectory resolves absolute path unchanged" passed after 0.031 seconds.
+✔ Test "'Close' button near top is classified as navigation" passed after 0.032 seconds.
+✔ Test "'Back' button far from top (y >= 100) is classified as action, not navigation" passed after 0.032 seconds.
+✔ Test "Disabled button is classified as disabled" passed after 0.032 seconds.
+✔ Test "Tabs are extracted from AXTabGroup children" passed after 0.032 seconds.
+✔ Test "Button inside nav bar with no keyword label is still navigation" passed after 0.032 seconds.
+✔ Test "Screen name falls back to 'Unknown Screen' when no text exists" passed after 0.032 seconds.
+✔ Test "Screen name inferred from top static text" passed after 0.032 seconds.
+✔ Test "Nav bar title wins over top text" passed after 0.032 seconds.
+✔ Test "Device pin/unpin round-trip in temp directory" passed after 0.032 seconds.
+✔ Test "screenAfter is nil when after string is empty" passed after 0.033 seconds.
+✔ Test "Button with 'remove' in label is classified as destructive" passed after 0.033 seconds.
+✔ Test "screenAfterName is nil when afterName string is empty" passed after 0.034 seconds.
+✔ Test "centerY is midpoint of y and height" passed after 0.034 seconds.
+✔ Test "Config round-trips through Codable" passed after 0.035 seconds.
+✔ Test "Config scope encodes as string" passed after 0.036 seconds.
+✔ Test "flattened returns self when node has no children" passed after 0.039 seconds.
+✔ Test "Button with 'delete' label is classified as destructive" passed after 0.039 seconds.
+✔ Test "Screen name from AXNavigationBar label" passed after 0.039 seconds.
+✔ Test "displayName prefers label first" passed after 0.042 seconds.
+✔ Test "offsetBy subtracts dx/dy from position, preserves size" passed after 0.042 seconds.
+✔ Test "Markdown includes after-name when present" passed after 0.042 seconds.
+✔ Test "offsetBy with negative deltas shifts position forward" passed after 0.042 seconds.
+✔ Test "Markdown heading uses action when target is empty" passed after 0.042 seconds.
+✔ Test "coords field is nil when coords string is empty" passed after 0.042 seconds.
+✔ Test "elementCount includes all nodes in tree" passed after 0.043 seconds.
+✔ Test "screenAfter preserves value when non-empty" passed after 0.042 seconds.
+✔ Test "screenAfterName preserves value when non-empty" passed after 0.042 seconds.
+✔ Test "Markdown includes before-name when present" passed after 0.042 seconds.
+✔ Test "Markdown heading uses target when target is non-empty" passed after 0.042 seconds.
+✔ Test "Markdown omits before-name separator when beforeName is empty" passed after 0.042 seconds.
+✔ Test "coords field preserves value when non-empty" passed after 0.042 seconds.
+✔ Test "Selected tab has isSelected=true" passed after 0.043 seconds.
+✔ Test "Content extracts AXStaticText elements" passed after 0.043 seconds.
+✔ Test "SweepStateReader handles journal where all actions stay on same screen" passed after 0.042 seconds.
+✔ Test "displayName falls back to role as last resort" passed after 0.042 seconds.
+✔ Test "displayName falls back to value when label and description are empty" passed after 0.042 seconds.
+✔ Test "displayName falls back to accessibilityDescription when label is empty" passed after 0.042 seconds.
+✔ Test "centerX is midpoint of x and width" passed after 0.042 seconds.
+✔ Test "Markdown omits after-name separator when afterName is empty" passed after 0.042 seconds.
+✔ Test "displayName falls back to identifier when all text fields are empty" passed after 0.042 seconds.
+✔ Test "SweepStateReader parses multi-action journal correctly" passed after 0.043 seconds.
+✔ Test "Non-interactive roles are excluded" with 6 test cases passed after 0.042 seconds.
+✔ Test "Frame.zero has all fields at zero" passed after 0.042 seconds.
+✔ Test "Button below nav bar is classified as action even when nav bar exists" passed after 0.043 seconds.
+✔ Test "Interactive roles are recognized" with 14 test cases passed after 0.042 seconds.
+✔ Test "flattened returns all descendants in order" passed after 0.042 seconds.
+✔ Test "SweepStateReader parses journal with issues and crash" passed after 0.043 seconds.
+✔ Test "Entry with empty screenBefore is not added to tappedElements" passed after 0.041 seconds.
+✔ Test "Entries with issues count correctly" passed after 0.041 seconds.
+✔ Test "Markdown extractFingerprint returns nil for malformed lines" passed after 0.040 seconds.
+✔ Test "Unselected tabs appear as tap-tab suggestions" passed after 0.043 seconds.
+✔ Test "Strategy 2 picks topmost large text when no top texts exist" passed after 0.043 seconds.
+✔ Test "Counts same-screen results" passed after 0.041 seconds.
+✔ Test "SweepStateReader correctly identifies tapped elements for 'already visited' checks" passed after 0.043 seconds.
+✔ Test "Returns nil for nonexistent journal path" passed after 0.036 seconds.
+✔ Test "Deduplicates screen fingerprints" passed after 0.041 seconds.
+✔ Test "Scroll-down suggested when screen height > 900" passed after 0.043 seconds.
+✔ Test "Entry with empty target is not added to tappedElements" passed after 0.035 seconds.
+✔ Test "Entries without issues have zero issue count" passed after 0.033 seconds.
+✔ Test "Forward-only navigation depth increments correctly" passed after 0.035 seconds.
+✔ Test "No JSON sidecar → falls back to markdown" passed after 0.042 seconds.
+✔ Test "Empty journal (header only) returns zero counts" passed after 0.036 seconds.
+✔ Test "JSON sidecar exists → reads from JSON, not markdown" passed after 0.030 seconds.
+✔ Test "Counts issues from Issue lines" passed after 0.036 seconds.
+✔ Test "Counts crash results" passed after 0.036 seconds.
+✔ Test "Markdown forward-only navigations produce correct depth" passed after 0.035 seconds.
+✔ Test "countByRole tallies all roles in tree" passed after 0.025 seconds.
+✔ Test "Depth resets to 0 on crash" passed after 0.041 seconds.
+✔ Test "totalCount returns total node count including root" passed after 0.024 seconds.
+✔ Test "JSON sidecar computes correct JournalState" passed after 0.037 seconds.
+✔ Test "NextInstruction encodes to valid JSON" passed after 0.024 seconds.
+✔ Test "collectInteractive on a tree with no interactive elements returns empty" passed after 0.026 seconds.
+✔ Test "NetworkLogParser.ParseResult encodes to valid JSON" passed after 0.024 seconds.
+✔ Test "AXNode encodes to valid JSON" passed after 0.024 seconds.
+✔ Test "collectInteractive returns only interactive elements from tree" passed after 0.024 seconds.
+✔ Test "Tracks tapped elements as fingerprint:target pairs" passed after 0.032 seconds.
+✔ Test "ScreenAnalysis encodes to valid JSON" passed after 0.024 seconds.
+✔ Test "AXNode is Sendable (passable across concurrency boundaries)" passed after 0.024 seconds.
+✔ Test "Different element positions produce different fingerprints" passed after 0.024 seconds.
+✔ Test "Tracks last fingerprint and screen name" passed after 0.033 seconds.
+✔ Test "All error types produce non-empty descriptions" passed after 0.024 seconds.
+✔ Test "Same tree produces the same fingerprint (deterministic)" passed after 0.024 seconds.
+✔ Test "Extracts unique screen fingerprints" passed after 0.030 seconds.
+✔ Test "Suggestion priorities are sequential — no duplicates" passed after 0.043 seconds.
+✔ Test "Depth decrements on back navigation in JSON entries" passed after 0.024 seconds.
+✔ Test "Counts navigated results" passed after 0.030 seconds.
+✔ Test "BootedDevice is Sendable" passed after 0.023 seconds.
+✔ Test "shortFingerprint returns first 8 characters" passed after 0.024 seconds.
+✔ Test "SweepPhase raw values are stable snake_case strings" passed after 0.023 seconds.
+✔ Test "Depth tracked from markdown — forward navigations increase depth" passed after 0.031 seconds.
+✔ Test "Fingerprint has expected length (32 hex chars)" passed after 0.023 seconds.
+✔ Test "Parses action count from ### headings" passed after 0.030 seconds.
+✔ Test "BoxEntry round-trips through Codable" passed after 0.023 seconds.
+✔ Test "Elements with zero width are excluded from fingerprint" passed after 0.023 seconds.
+✔ Test "findBackAction finds 'Done' dismiss button" passed after 0.024 seconds.
+✔ Test "Progress reflects journal state" passed after 0.024 seconds.
+✔ Test "shortFingerprint(from:) returns first 8 chars of a full fingerprint string" passed after 0.022 seconds.
+✔ Test "Exhausted screen with back button navigates back" passed after 0.023 seconds.
+✔ Test "Simulator error produces crashed phase" passed after 0.022 seconds.
+✔ Test "No AX tree produces crashed phase with launch recovery" passed after 0.022 seconds.
+✔ Test "Elements whose displayName falls back to role still contribute to fingerprint" passed after 0.022 seconds.
+✔ Test "findBackAction prioritizes Back button over Close button" passed after 0.024 seconds.
+✔ Test "Depth computed correctly from navigation sequence" passed after 0.022 seconds.
+✔ Test "findBackAction finds 'Dismiss' button" passed after 0.023 seconds.
+✔ Test "All actions tapped and no back button produces screenExhausted with swipe" passed after 0.024 seconds.
+✔ Test "Round-trip preserves center coordinates for iPhone 16" passed after 0.022 seconds.
+✔ Test "Screen limit reached produces complete phase" passed after 0.024 seconds.
+✔ Test "SwipeDirection.right swipes from left to right" passed after 0.022 seconds.
+✔ Test "maxDepth reached on new screen produces screenExhausted" passed after 0.024 seconds.
+✔ Test "SwipeDirection.left swipes from right to left" passed after 0.022 seconds.
+✔ Test "SwipeDirection.down swipes from center-top to center-bottom" passed after 0.022 seconds.
+✔ Test "Round-trip preserves coordinates for iPhone 16 Pro (different device size)" passed after 0.022 seconds.
+✔ Test "Round-trip preserves coordinates at origin (0,0 in device space)" passed after 0.022 seconds.
+✔ Test "No point in 0..393 x 0..852 drifts more than 1pt after round-trip" passed after 0.022 seconds.
+✔ Test "SwipeDirection.up swipes from center-bottom to center-top" passed after 0.022 seconds.
+✔ Test "Round-trip preserves coordinates at bottom-right corner" passed after 0.022 seconds.
+✔ Suite "BoxMapping — persistence round-trips" passed after 0.045 seconds.
+✔ Test "maxDepth reached on known screen still allows exploring" passed after 0.024 seconds.
+✔ Suite "ProjectConfig — configuration resolution" passed after 0.045 seconds.
+✔ Suite "Journal — file operations round-trip" passed after 0.045 seconds.
+✔ Suite "NetworkLogParser — HTTP log parsing" passed after 0.045 seconds.
+✔ Suite "AXNode — model properties" passed after 0.045 seconds.
+✔ Suite "Coordinate transforms — AXTreeReader utilities" passed after 0.045 seconds.
+✔ Suite "Fingerprinter — screen identity hashing" passed after 0.045 seconds.
+✔ Suite "Structural — API contracts and type safety" passed after 0.045 seconds.
+✔ Suite "SweepStateReader — journal markdown parsing" passed after 0.045 seconds.
+✔ Test "findBackAction falls back to swipe when no navigation buttons exist" passed after 0.023 seconds.
+✔ Suite "Reverse coordinate transform — tap pipeline accuracy" passed after 0.045 seconds.
+✔ Test "findBackAction finds 'Cancel' dismiss button" passed after 0.023 seconds.
+✔ Test "New screen with untapped elements produces newScreen phase" passed after 0.025 seconds.
+✔ Test "Tab buttons appear as actions — tapping them follows the exploring phase" passed after 0.025 seconds.
+✔ Test "Already-tapped elements are excluded from untapped count" passed after 0.025 seconds.
+✔ Test "Known screen with untapped elements produces exploring phase" passed after 0.025 seconds.
+✔ Suite "Next.determineInstruction — state machine transitions" passed after 0.048 seconds.
+✔ Test "Content is capped at 20 elements" passed after 0.050 seconds.
+✔ Suite "ScreenAnalyzer — element classification" passed after 0.051 seconds.
+✔ Test run with 150 tests in 12 suites passed after 0.051 seconds.
