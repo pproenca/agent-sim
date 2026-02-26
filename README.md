@@ -19,14 +19,28 @@ This installs the commands, skills, and templates. You still need the CLI binary
 ### CLI binary
 
 ```bash
-# Homebrew (installs CLI + registers Claude Code plugin)
+# Homebrew (installs CLI)
 brew install pproenca/tap/agent-sim
 
-# or curl (installs to ~/.local + registers Claude Code plugin)
+# or curl (installs to ~/.local/bin + ~/.local/lib/agent-sim)
 curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
 ```
 
-Both installers also register agent-sim as a Claude Code plugin automatically.
+The installer can register agent-sim assets for Claude Code and OpenCode in:
+
+- `user` scope:
+  - Claude: `~/.claude/skills/`
+  - OpenCode: `~/.config/opencode/skills/` and `~/.config/opencode/commands/`
+- `project` scope:
+  - Claude: `.claude/skills/`
+  - OpenCode: `.opencode/skills/` and `.opencode/commands/`
+
+You can set scope non-interactively:
+
+```bash
+AGENT_SIM_SCOPE=user curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
+AGENT_SIM_SCOPE=project AGENT_SIM_PROJECT_DIR="$PWD" curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/master/scripts/install.sh | bash
+```
 
 ### Claude Code commands
 

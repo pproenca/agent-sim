@@ -68,7 +68,11 @@ extension AXNode {
 enum AXTreeReader {
 
   /// Read the device's accessibility tree via FBAccessibilityCommands.
-  /// Coordinates are native iOS device points — no transforms needed.
+  /// Coordinates are normalized to iOS device points.
+  ///
+  /// Some apps (notably some Expo/React Native builds) expose AX frames in
+  /// simulator-window/absolute coordinates instead of device points. We detect
+  /// the top-level viewport frame and normalize all node frames into device space.
   static func readDeviceTree(simulatorUDID: String, maxDepth: Int = 20) async throws -> AXNode {
     let elements = try await AccessibilityFetcher.fetch(simulatorUDID: simulatorUDID)
     guard !elements.isEmpty else {
@@ -77,23 +81,31 @@ enum AXTreeReader {
 
     // The top-level array usually contains a single root element (the window/app).
     // If multiple roots, wrap them in a synthetic container.
+    let rawTree: AXNode
     if elements.count == 1 {
-      return convertElement(elements[0], depth: 0, maxDepth: maxDepth)
+      rawTree = convertElement(elements[0], depth: 0, maxDepth: maxDepth)
+    } else {
+      let children = elements.map { convertElement($0, depth: 1, maxDepth: maxDepth) }
+      rawTree = AXNode(
+        role: "AXGroup",
+        label: "",
+        identifier: "",
+        value: "",
+        roleDescription: "",
+        accessibilityDescription: "",
+        help: "",
+        enabled: true,
+        frame: .zero,
+        depth: 0,
+        children: children
+      )
     }
 
-    let children = elements.map { convertElement($0, depth: 1, maxDepth: maxDepth) }
-    return AXNode(
-      role: "AXGroup",
-      label: "",
-      identifier: "",
-      value: "",
-      roleDescription: "",
-      accessibilityDescription: "",
-      help: "",
-      enabled: true,
-      frame: .zero,
-      depth: 0,
-      children: children
+    let device = try await SimulatorBridge.resolveDevice(udid: simulatorUDID)
+    return normalizeToDevicePoints(
+      rawTree,
+      deviceWidth: device.screenWidthPoints,
+      deviceHeight: device.screenHeightPoints
     )
   }
 
@@ -115,6 +127,110 @@ enum AXTreeReader {
 
   static func totalCount(_ node: AXNode) -> Int {
     1 + node.children.reduce(0) { $0 + totalCount($1) }
+  }
+
+  // MARK: - Coordinate Normalization
+
+  /// Normalize a raw AX tree into simulator device-point coordinates.
+  /// This is a no-op when the tree already matches the device coordinate space.
+  static func normalizeToDevicePoints(
+    _ root: AXNode,
+    deviceWidth: Double,
+    deviceHeight: Double
+  ) -> AXNode {
+    guard let viewport = inferredViewportFrame(from: root) else {
+      return root
+    }
+
+    guard shouldNormalize(viewport: viewport, deviceWidth: deviceWidth, deviceHeight: deviceHeight) else {
+      return root
+    }
+
+    let scaleX = deviceWidth / viewport.width
+    let scaleY = deviceHeight / viewport.height
+
+    if ProcessInfo.processInfo.environment["AGENT_SIM_DEBUG_COORDS"] == "1" {
+      fputs(
+        "info: Normalizing AX coordinates using viewport "
+        + "x=\(viewport.x), y=\(viewport.y), w=\(viewport.width), h=\(viewport.height); "
+        + "scaleX=\(scaleX), scaleY=\(scaleY)\n",
+        stderr
+      )
+    }
+
+    return mapFrames(root) { frame in
+      guard frame.width > 0 || frame.height > 0 else {
+        return frame
+      }
+      return AXNode.Frame(
+        x: (frame.x - viewport.x) * scaleX,
+        y: (frame.y - viewport.y) * scaleY,
+        width: frame.width * scaleX,
+        height: frame.height * scaleY
+      )
+    }
+  }
+
+  /// Infer the top-level viewport frame that the AX coordinates are relative to.
+  /// Prefers shallow `AXWindow`/`AXApplication` containers over deep content nodes.
+  static func inferredViewportFrame(from root: AXNode) -> AXNode.Frame? {
+    let candidates = root.flattened().filter {
+      $0.depth <= 2 && $0.frame.width > 100 && $0.frame.height > 100
+    }
+    guard !candidates.isEmpty else { return nil }
+
+    return candidates
+      .sorted {
+        let lhsRole = viewportRolePriority($0.role)
+        let rhsRole = viewportRolePriority($1.role)
+        if lhsRole != rhsRole { return lhsRole > rhsRole }
+        return ($0.frame.width * $0.frame.height) > ($1.frame.width * $1.frame.height)
+      }
+      .first?
+      .frame
+  }
+
+  private static func shouldNormalize(
+    viewport: AXNode.Frame,
+    deviceWidth: Double,
+    deviceHeight: Double
+  ) -> Bool {
+    guard viewport.width > 0, viewport.height > 0 else { return false }
+    let scaleX = deviceWidth / viewport.width
+    let scaleY = deviceHeight / viewport.height
+    let originMismatch = abs(viewport.x) > 1 || abs(viewport.y) > 1
+    let scaleMismatch = abs(scaleX - 1) > 0.03 || abs(scaleY - 1) > 0.03
+    return originMismatch || scaleMismatch
+  }
+
+  private static func viewportRolePriority(_ role: String) -> Int {
+    switch role {
+    case "AXWindow":
+      return 3
+    case "AXApplication":
+      return 2
+    case "AXGroup":
+      return 1
+    default:
+      return 0
+    }
+  }
+
+  private static func mapFrames(_ node: AXNode, transform: (AXNode.Frame) -> AXNode.Frame) -> AXNode {
+    let mappedChildren = node.children.map { mapFrames($0, transform: transform) }
+    return AXNode(
+      role: node.role,
+      label: node.label,
+      identifier: node.identifier,
+      value: node.value,
+      roleDescription: node.roleDescription,
+      accessibilityDescription: node.accessibilityDescription,
+      help: node.help,
+      enabled: node.enabled,
+      frame: transform(node.frame),
+      depth: node.depth,
+      children: mappedChildren
+    )
   }
 
   // MARK: - Private

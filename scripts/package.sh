@@ -3,58 +3,84 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$SCRIPT_DIR/.."
-DIST="$ROOT/dist/agent-sim"
-TARBALL="$ROOT/dist/agent-sim-macos-arm64.tar.gz"
+DIST_ROOT="$ROOT/dist"
+DIST="$DIST_ROOT/agent-sim"
+TARBALL="$DIST_ROOT/agent-sim-macos-arm64.tar.gz"
+BINARY_PATH="$ROOT/.build/release/AgentSim"
+FRAMEWORKS=(FBControlCore FBSimulatorControl FBDeviceControl XCTestBootstrap)
+ASSET_DIRS=(commands skills Templates references .claude-plugin)
 
-echo "Building release..."
-cd "$ROOT"
-swift build -c release 2>&1
+fail() {
+  echo "Error: $1" >&2
+  exit 1
+}
 
-echo "Packaging..."
-rm -rf "$DIST" "$TARBALL"
-mkdir -p "$DIST"
+require_path() {
+  local path="$1"
+  [[ -e "$path" ]] || fail "required path not found: $path"
+}
 
-# Copy binary
-cp .build/release/AgentSim "$DIST/agent-sim"
+build_release_binary() {
+  echo "Building release binary..."
+  cd "$ROOT"
+  swift build -c release
+  require_path "$BINARY_PATH"
+}
 
-# Copy dynamic frameworks (just the .framework dirs, not the xcframework wrappers)
-for fw in FBControlCore FBSimulatorControl FBDeviceControl XCTestBootstrap; do
-  cp -R "Frameworks/${fw}.xcframework/macos-arm64/${fw}.framework" "$DIST/"
-done
+prepare_dist() {
+  echo "Preparing dist directory..."
+  rm -rf "$DIST" "$TARBALL"
+  mkdir -p "$DIST"
+}
 
-# Copy non-binary assets
-cp -R "$ROOT/commands" "$DIST/"
-cp -R "$ROOT/skills" "$DIST/"
-cp -R "$ROOT/Templates" "$DIST/"
-cp -R "$ROOT/references" "$DIST/"
+copy_binary_and_frameworks() {
+  cp "$BINARY_PATH" "$DIST/agent-sim"
 
-# Copy Claude Code plugin manifest
-cp -R "$ROOT/.claude-plugin" "$DIST/"
+  for fw in "${FRAMEWORKS[@]}"; do
+    local framework_path="$ROOT/Frameworks/${fw}.xcframework/macos-arm64/${fw}.framework"
+    require_path "$framework_path"
+    cp -R "$framework_path" "$DIST/"
+  done
+}
 
-# Strip debug symbols for smaller size
-strip -x "$DIST/agent-sim" 2>/dev/null || true
+copy_assets() {
+  for dir in "${ASSET_DIRS[@]}"; do
+    local source="$ROOT/$dir"
+    require_path "$source"
+    cp -R "$source" "$DIST/"
+  done
+}
 
-# Ad-hoc codesign everything (required on Apple Silicon)
-for fw in FBControlCore FBSimulatorControl FBDeviceControl XCTestBootstrap; do
-  codesign --force --sign - "$DIST/${fw}.framework" 2>/dev/null || true
-done
-codesign --force --sign - "$DIST/agent-sim" 2>/dev/null || true
+sign_payload() {
+  strip -x "$DIST/agent-sim" 2>/dev/null || true
 
-# Create tarball for GitHub releases
-cd "$ROOT/dist"
-tar -czf agent-sim-macos-arm64.tar.gz agent-sim/
+  for fw in "${FRAMEWORKS[@]}"; do
+    codesign --force --sign - "$DIST/${fw}.framework" 2>/dev/null || true
+  done
+  codesign --force --sign - "$DIST/agent-sim" 2>/dev/null || true
+}
 
-# Show result
-echo ""
-echo "Distribution:"
-ls -lh "$DIST/agent-sim"
-du -sh "$DIST"
-echo ""
-echo "Tarball:"
-ls -lh "$TARBALL"
-echo ""
-echo "Upload to GitHub release:"
-echo "  gh release create v0.1.0 $TARBALL --title 'v0.1.0' --notes 'Initial release'"
-echo ""
-echo "Users install with:"
-echo "  curl -fsSL https://raw.githubusercontent.com/pproenca/agent-sim/main/scripts/install.sh | bash"
+create_tarball() {
+  echo "Creating release tarball..."
+  cd "$DIST_ROOT"
+  tar -czf "$(basename "$TARBALL")" "$(basename "$DIST")"
+  require_path "$TARBALL"
+}
+
+print_summary() {
+  echo ""
+  echo "Distribution:"
+  ls -lh "$DIST/agent-sim"
+  du -sh "$DIST"
+  echo ""
+  echo "Tarball:"
+  ls -lh "$TARBALL"
+}
+
+build_release_binary
+prepare_dist
+copy_binary_and_frameworks
+copy_assets
+sign_payload
+create_tarball
+print_summary
