@@ -1,5 +1,5 @@
 ---
-name: critique
+name: agentsim:critique
 description: "Apple Design Award-grade design critique — HIG-informed, opinionated, aspirational"
 ---
 

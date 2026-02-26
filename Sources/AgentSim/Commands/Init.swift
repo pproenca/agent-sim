@@ -16,7 +16,7 @@ struct Init: ParsableCommand {
 
   @Option(
     name: .long,
-    help: "Comma-separated agent tools to configure: claude, cursor, windsurf, or 'all'."
+    help: "Comma-separated agent tools to configure: claude, opencode, cursor, windsurf, or 'all'."
   )
   var tools: String?
 
@@ -80,6 +80,11 @@ struct Init: ParsableCommand {
           projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope
         )
         installedChecksums.merge(checksums) { _, new in new }
+      case "opencode":
+        let checksums = try installOpenCode(
+          projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope
+        )
+        installedChecksums.merge(checksums) { _, new in new }
       case "cursor":
         try installCursor(projectRoot: projectRoot, assetRoot: assetRoot, scope: resolvedScope)
       case "windsurf":
@@ -133,6 +138,8 @@ struct Init: ParsableCommand {
     print("  /agentsim:new     — Start a QA sweep")
     print("  /agentsim:apply   — Fix findings")
     print("  /agentsim:replay  — Replay scenarios")
+    print("  /agentsim:tests   — Generate tests from sweep journal")
+    print("  /agentsim:critique — Run a design critique")
     if assetSource == .stub {
       print("")
       print("Note: Commands installed as stubs. Install from source or update to get full commands.")
@@ -177,7 +184,7 @@ struct Init: ParsableCommand {
   private func resolveTools() -> [String] {
     if let tools {
       if tools == "all" {
-        return ["claude", "cursor", "windsurf"]
+        return ["claude", "opencode", "cursor", "windsurf"]
       }
       if tools == "none" {
         return []
@@ -208,6 +215,26 @@ struct Init: ParsableCommand {
 
     let checksums = try installCommands(to: targetDir, from: assetRoot)
     print("  Claude Code: installed commands to \(targetDir)")
+    return checksums
+  }
+
+  @discardableResult
+  private func installOpenCode(
+    projectRoot: String,
+    assetRoot: String?,
+    scope: ProjectConfig.Config.Scope
+  ) throws -> [String: Manifest.FileEntry] {
+    let targetDir: String
+    switch scope {
+    case .project:
+      targetDir = (projectRoot as NSString).appendingPathComponent(".opencode/commands/agentsim")
+    case .user:
+      let home = NSHomeDirectory()
+      targetDir = "\(home)/.config/opencode/commands/agentsim"
+    }
+
+    let checksums = try installCommands(to: targetDir, from: assetRoot)
+    print("  OpenCode: installed commands to \(targetDir)")
     return checksums
   }
 
@@ -274,13 +301,13 @@ struct Init: ParsableCommand {
           fm.fileExists(atPath: (assetRoot as NSString).appendingPathComponent("commands"))
     else {
       // No asset root found — write minimal stubs
-      for name in ["new", "apply", "replay"] {
+      for name in ["new", "apply", "replay", "tests", "critique"] {
         let filename = "\(name).md"
         let stubPath = (targetDir as NSString).appendingPathComponent(filename)
         if !fm.fileExists(atPath: stubPath) {
           let stub = """
             ---
-            name: \(name)
+            name: agentsim:\(name)
             description: "AgentSim \(name) command — run `agent-sim --help` for details"
             ---
             Run `agent-sim \(name) --help` for usage.

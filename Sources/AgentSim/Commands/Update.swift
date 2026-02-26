@@ -201,11 +201,18 @@ struct Update: ParsableCommand {
     // The manifest dir is `.agent-sim/` — the project root is its parent
     let projectRoot = (manifestDir as NSString).deletingLastPathComponent
 
-    if manifest.tools.contains("claude") {
-      return (projectRoot as NSString).appendingPathComponent(".claude/commands/agentsim")
+    for tool in manifest.tools {
+      switch tool {
+      case "claude":
+        return (projectRoot as NSString).appendingPathComponent(".claude/commands/agentsim")
+      case "opencode":
+        return (projectRoot as NSString).appendingPathComponent(".opencode/commands/agentsim")
+      default:
+        continue
+      }
     }
 
-    // Fallback: use the asset root's commands dir as reference
+    // Legacy fallback when manifest tools don't include a command-aware target.
     return (projectRoot as NSString).appendingPathComponent(".claude/commands/agentsim")
   }
 

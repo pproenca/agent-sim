@@ -1,5 +1,5 @@
 ---
-name: apply
+name: agentsim:apply
 description: "Apply findings from a sweep — fix accessibility gaps, file bug reports"
 ---
 

@@ -63,8 +63,7 @@ struct Doctor: ParsableCommand {
 
         // Find install dir
         let projectRoot = (dir as NSString).deletingLastPathComponent
-        let installDir = (projectRoot as NSString)
-          .appendingPathComponent(".claude/commands/agentsim")
+        let installDir = commandInstallDir(projectRoot: projectRoot, tools: manifest.tools)
 
         for (filename, entry) in manifest.commands.sorted(by: { $0.key < $1.key }) {
           let installedPath = (installDir as NSString).appendingPathComponent(filename)
@@ -108,5 +107,21 @@ struct Doctor: ParsableCommand {
       return files.filter { $0.hasSuffix(".\(ext)") }.count
     }
     return files.count
+  }
+
+  private func commandInstallDir(projectRoot: String, tools: [String]) -> String {
+    for tool in tools {
+      switch tool {
+      case "claude":
+        return (projectRoot as NSString).appendingPathComponent(".claude/commands/agentsim")
+      case "opencode":
+        return (projectRoot as NSString).appendingPathComponent(".opencode/commands/agentsim")
+      default:
+        continue
+      }
+    }
+
+    // Legacy fallback when manifest tools don't include a command-aware target.
+    return (projectRoot as NSString).appendingPathComponent(".claude/commands/agentsim")
   }
 }
