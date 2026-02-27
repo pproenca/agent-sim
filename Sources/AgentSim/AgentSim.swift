@@ -6,7 +6,7 @@ public struct AgentSim: AsyncParsableCommand {
   public static let configuration = CommandConfiguration(
     commandName: "agent-sim",
     abstract: "AI-driven iOS Simulator exploration and acceptance test generation.",
-    version: "0.1.7",
+    version: "0.1.8",
     subcommands: [
       Init.self,
       Boot.self,
