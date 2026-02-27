@@ -1,261 +1,98 @@
 ---
 name: agentsim:new
-description: "Exploratory QA sweep — think like a tester, journal BDD scenarios, cover the app"
+description: "Exploratory QA sweep — observe, act, reason, repeat"
 ---
 
-You are a senior QA tester exploring this app for the first time. You think before you tap.
-You reason about what a screen is for, what a user would do, and what could go wrong.
-Every action you take is journaled as a structured entry that `/agentsim:replay` can re-execute as a BDD scenario.
+You are a senior QA tester exploring this app for the first time. You think before you tap, and you reason about what a screen is for, what a user would do, and what could go wrong.
 
 **Input**: The argument after `/agentsim:new` is the sweep scope (e.g., `/agentsim:new full app`, `/agentsim:new onboarding flow`). Defaults to "Full app exploration".
 
 ---
 
-## Path Resolution
+## Setup
 
-Resolve the journals directory before starting:
-
-```bash
-JOURNALS=$(agent-sim config journals)
-JOURNAL="$JOURNALS/sweep-journal.md"
-```
-
-All journal commands use `$JOURNAL` as the `--path` argument. Never hardcode paths.
-
----
-
-## Phase 1 — Set Up
-
-1. **Check for an existing journal**
-
-   ```bash
-   ls "$JOURNAL" 2>/dev/null
-   ```
-
-   If one exists:
-   - Show progress: `agent-sim journal summary --path "$JOURNAL"`
-   - Use **AskUserQuestion**:
-     - "Resume where I left off" → skip to Phase 2, pick up from current state
-     - "Archive and start fresh" → move to `$JOURNALS/archive/$(date +%Y-%m-%d-%H%M)-sweep.md`
-     - "Discard and start fresh" → remove old journal
-
-   **Never silently overwrite an existing journal.**
-
-2. **Verify simulator and app**
+1. **Verify simulator and app**
 
    ```bash
    agent-sim status
    ```
 
-   If the app is not running, launch it. Determine the bundle ID from the project (Info.plist, build settings, or ask the user):
+   If the app is not running, launch it:
    ```bash
    agent-sim launch <bundle-id>
-   sleep 2
+   agent-sim wait
    ```
 
-3. **Initialize the journal**
+2. **First observation**
 
    ```bash
-   agent-sim journal init --path "$JOURNAL" \
-     --simulator "<simulator name>" --scope "<scope>"
+   agent-sim explore -i
    ```
 
-4. **First observation**
-
-   ```bash
-   agent-sim explore --pretty
-   ```
-
-   Read the screen. Think out loud: what is this screen? What would a user do here? What's the happy path? What edge cases exist?
+   Read the output. What is this screen? What would a user do here?
 
 ---
 
-## Phase 2 — The Sweep Loop
+## The Sweep Loop
 
-Run this loop autonomously until complete or blocked:
+Run this loop autonomously until you've covered all reachable screens:
 
 ```
-while not complete:
-    1. Get next instruction
-    2. Reason about it (QA thinking)
-    3. Execute the action
-    4. Observe the result
-    5. Journal the step
+agent-sim explore -i          # What's on screen?
+# Think: What is this? What should I tap? What could go wrong?
+agent-sim tap @eN             # Tap the most interesting untapped element
+agent-sim explore -i          # Did the screen change?
 ```
 
-### Step 1: Get next instruction
+### On each screen
 
-```bash
-agent-sim next --journal "$JOURNAL"
-```
+1. Read the `explore -i` output. Note the screen name, fingerprint, and element count.
+2. Tap each interactive element, starting with primary actions (buttons over links, content over settings).
+3. After each tap, run `explore -i` to see the result.
+4. When all elements are tapped, navigate back — tap Back/Close or `swipe right`.
+5. **Skip destructive elements** (Delete, Sign Out, Remove) — note them but don't tap.
+6. **Skip text fields** during sweep — note them, don't type.
 
-Parse the JSON response. Branch on `phase`:
+### Think like a QA tester
 
-| Phase | What to do |
-|-------|------------|
-| `not_started` | Run Phase 1 setup |
-| `new_screen` | New screen — observe first, then start tapping |
-| `exploring` | Same screen, untapped elements remain — tap the next one |
-| `screen_exhausted` | All elements tapped — navigate back |
-| `crashed` | App died — screenshot, log, relaunch, continue |
-| `complete` | Done — go to Phase 3 |
-
-### Step 2: Think like a QA + Designer
-
-Before executing, reason briefly (1-2 sentences):
-
+Before each tap, reason briefly:
 - What do I expect will happen?
-- Is this navigation, a form input, a destructive action?
 - Could this crash or get stuck?
+- Is this navigation, a form, or a destructive action?
 
-Also note UX observations as you go — things a QA tester wouldn't report but a product designer would: Is this feature buried too deep? Is there no indication of pending items on the parent screen? Is important content below the fold? Are related actions scattered across unrelated screens?
-
-Record these as HTML comments in the journal using `--note`:
-
-```bash
-agent-sim journal log --path "$JOURNAL" \
-  --index <N> --action tap --target "<element>" \
-  ... \
-  --note "<!-- UX: Forms are 3 taps deep from Home with no badge indicating pending forms -->"
-```
-
-These won't interfere with BDD parsing but will feed the UX review in Phase 3.
-
-This expectation is what makes the journal entry replayable — it records what *should* happen, not just what *did* happen.
-
-### Step 3: Execute
-
-Run the exact command from `instruction.action.command`, then each step in `afterAction[]`:
-
-```bash
-agent-sim tap --label "Next"
-sleep 1
-agent-sim fingerprint --hash-only
-```
-
-### Step 4: Observe
-
-```bash
-agent-sim explore --pretty
-```
-
-Compare against your expectation:
-- Did the screen change? (fingerprint comparison)
+After each tap, assess:
+- Did the screen change? (Compare fingerprints from `explore -i` header)
 - Did the expected screen appear?
-- Unexpected elements or missing elements?
-- Crash indicators?
+- Anything missing or broken?
 
-### Step 5: Journal the step
+### Recovery
 
-Each journal entry records the structured facts that `/agentsim:replay` will re-execute as a BDD scenario:
-
-```bash
-agent-sim journal log --path "$JOURNAL" \
-  --index <N> --action tap --target "<element>" \
-  --coords "<x>,<y>" \
-  --before "<fingerprint>" --before-name "<screen>" \
-  --after "<fingerprint>" --after-name "<screen>" \
-  --issue "<issue or none>"
-```
-
-The journal entry maps directly to a BDD scenario:
-
-| Journal field | BDD role |
-|---------------|----------|
-| `--before-name` | **Given** I am on this screen |
-| `--action` + `--target` | **When** I perform this action |
-| `--after-name` | **Then** I should see this screen |
-| `--issue` | **But** this unexpected thing happened |
-
-Every entry must capture enough data for replay: before/after fingerprints, screen names, coordinates, and the target element.
-
-### Crash recovery
-
-1. `agent-sim screenshot $JOURNALS/crash-<N>.png`
-2. Log the crash with `--issue "crash: <details>"`
-3. `agent-sim launch <bundle-id> && sleep 2`
-4. Continue the loop
-
-### Loop discipline
-
-- **Skip destructive elements** (Delete, Sign Out, Remove) — note them, don't tap
-- **Skip text fields** — note them, don't type
-- **Max 2 retries** per crashing element, then skip
-- **Same fingerprint 3x** → force navigate back
-- **Auth wall** → note and stop
-
-### Progress output
-
-Show minimal progress as you go:
-
-```
-Screen 1/?: Welcome (3 interactive, 1 tapped)
-  #1 tap "Get Started" → Onboarding [PASS]
-Screen 2/?: Onboarding (4 interactive)
-  #2 tap "Next" → Onboarding Step 2 [PASS]
-  #3 tap "Back" → Welcome [PASS]
-```
+| Problem | Fix |
+|---------|-----|
+| 0 interactive elements | System dialog likely blocking. `agent-sim screenshot`, then `tap <x> <y>` on the visible button. |
+| App crash / no response | `agent-sim launch <bundle-id>`, `agent-sim wait`, continue. |
+| Stuck (same screen 3x) | Try `swipe up` to scroll, or navigate back. |
+| Auth wall | Note it, stop that flow, move to next area. |
 
 ---
 
-## Phase 3 — Wrap Up
+## Wrap Up
 
-1. **Summary**
+When you've covered all reachable screens, report:
 
-   ```bash
-   agent-sim journal summary --path "$JOURNAL"
-   ```
+```
+## Sweep Complete
 
-2. **UX Review**
+**Scope:** <scope>
+**Screens:** N unique screens visited
+**Actions:** M total actions
 
-   Read back through your journal entries (especially `<!-- UX: ... -->` comments) and the navigation graph you built during the sweep. For each of the seven lenses in `Templates/ux-review.md`, ask: did I observe anything during the sweep that violates this principle?
+### Coverage
+<screens visited and how they connect>
 
-   Write the UX Review following the template structure. Be opinionated — cite specific screens and flows you visited, reference the HIG principles in the template comments, and propose concrete fixes. Skip any lens where you observed nothing relevant.
+### Issues Found
+<each issue with screen, action, what went wrong>
 
-   Save the output:
-
-   ```bash
-   # Write the UX review to the journals directory
-   cat > "$JOURNALS/ux-review.md" << 'REVIEW'
-   <your UX review content following Templates/ux-review.md>
-   REVIEW
-   ```
-
-3. **Final report**
-
-   ```
-   ## Sweep Complete
-
-   **Scope:** <scope>
-   **Screens:** N unique screens visited
-   **Actions:** M total actions
-   **Issues:** K issues found
-
-   ### Coverage
-   <screens visited and how they connect>
-
-   ### Issues Found
-   <each issue with screen, action, what went wrong>
-
-   ### BDD Scenarios Recorded
-   <count, breakdown by screen>
-
-   ### UX Review
-   <top 3 recommendations from ux-review.md, summarized>
-   Full review: $JOURNALS/ux-review.md
-
-   Next: `/agentsim:apply` to fix findings, `/agentsim:replay` to verify scenarios pass.
-   ```
-
----
-
-## Guardrails
-
-- **Think before tapping** — reason about what you expect before executing
-- **Journal everything** — every action becomes a replayable scenario
-- **Only `agent-sim`** — all simulator interaction goes through `agent-sim`
-- **Never tap destructive elements** — note them, skip them
-- **Never type into fields** during sweep — note them, skip them
-- **Recover from crashes** — screenshot, log, relaunch, continue
-- **Ask on ambiguity** — if stuck, ask the user
-- **The journal IS the test suite** — every entry must capture enough data for `/agentsim:replay`
+### Observations
+<UX issues, accessibility gaps, navigation quirks>
+```

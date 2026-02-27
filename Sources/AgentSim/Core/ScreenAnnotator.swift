@@ -23,12 +23,14 @@ enum ScreenAnnotator {
   private static let badgeColor = NSColor(red: 0.85, green: 0.05, blue: 0.05, alpha: 1)
   private static let badgeBorder = CGColor(red: 1, green: 1, blue: 1, alpha: 1)
 
-  /// Annotate a screenshot PNG with numbered bounding boxes.
+  /// Annotate a screenshot PNG with bounding boxes and labels.
+  /// When `labels` is provided, uses those strings (e.g. "@e1") instead of sequential box numbers.
   static func annotate(
     imagePath: String,
     elements: [AnnotatedElement],
     deviceSize: (width: Double, height: Double),
-    outputPath: String
+    outputPath: String,
+    labels: [String]? = nil
   ) throws {
     let url = URL(fileURLWithPath: imagePath)
     guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil),
@@ -89,32 +91,50 @@ enum ScreenAnnotator {
       ctx.setFillColor(boxFill)
       ctx.fill(rect)
 
-      // Numbered badge at top-left corner
-      let badgeCenterX = rect.origin.x + badgeRadius + 2
-      let badgeCenterY = rect.origin.y + badgeRadius + 2
-      let badgeRect = CGRect(
-        x: badgeCenterX - badgeRadius,
-        y: badgeCenterY - badgeRadius,
-        width: badgeRadius * 2,
-        height: badgeRadius * 2
-      )
-
-      // Badge background
-      ctx.setFillColor(badgeColor.cgColor)
-      ctx.fillEllipse(in: badgeRect)
-
-      // White border for contrast on dark/red backgrounds
-      ctx.setStrokeColor(badgeBorder)
-      ctx.setLineWidth(max(2.0 * scaleX, 2.0))
-      ctx.strokeEllipse(in: badgeRect)
-
-      // Number text (white, bold)
-      let numberString = "\(element.box)" as NSString
+      // Badge text (white, bold) — ref label or box number
+      let badgeText: String
+      if let labels, element.box - 1 < labels.count {
+        badgeText = labels[element.box - 1]
+      } else {
+        badgeText = "\(element.box)"
+      }
+      let numberString = badgeText as NSString
       let attributes: [NSAttributedString.Key: Any] = [
         .font: NSFont.boldSystemFont(ofSize: fontSize),
         .foregroundColor: NSColor.white,
       ]
       let textSize = numberString.size(withAttributes: attributes)
+
+      // Badge size adapts to text width (pill for long labels, circle for short)
+      let badgeWidth = max(badgeRadius * 2, textSize.width + 10 * scaleX)
+      let badgeHeight = badgeRadius * 2
+      let badgeCenterX = rect.origin.x + badgeWidth / 2 + 2
+      let badgeCenterY = rect.origin.y + badgeHeight / 2 + 2
+      let badgeRect = CGRect(
+        x: badgeCenterX - badgeWidth / 2,
+        y: badgeCenterY - badgeHeight / 2,
+        width: badgeWidth,
+        height: badgeHeight
+      )
+
+      // Badge background (rounded rect for pill shape)
+      let badgePath = CGPath(
+        roundedRect: badgeRect,
+        cornerWidth: badgeHeight / 2,
+        cornerHeight: badgeHeight / 2,
+        transform: nil
+      )
+      ctx.addPath(badgePath)
+      ctx.setFillColor(badgeColor.cgColor)
+      ctx.fillPath()
+
+      // White border for contrast
+      ctx.addPath(badgePath)
+      ctx.setStrokeColor(badgeBorder)
+      ctx.setLineWidth(max(2.0 * scaleX, 2.0))
+      ctx.strokePath()
+
+      // Draw text centered in badge
       let textOrigin = CGPoint(
         x: badgeCenterX - textSize.width / 2,
         y: badgeCenterY - textSize.height / 2

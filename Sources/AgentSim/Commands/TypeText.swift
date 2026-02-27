@@ -13,5 +13,10 @@ struct TypeText: AsyncParsableCommand {
   func run() async throws {
     let device = try await SimulatorBridge.resolveDevice()
     try await SimulatorBridge.type(text, simulatorID: device.udid)
+
+    // Auto-log
+    ActionLogger.log(ActionLogger.entry(action: "type", target: text))
+
+    print("Done")
   }
 }

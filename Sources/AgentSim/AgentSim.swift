@@ -17,6 +17,7 @@ public struct AgentSim: AsyncParsableCommand {
       ConfigCmd.self,
       Next.self,
       Explore.self,
+      Diff.self,
       Describe.self,
       Tap.self,
       SwipeCmd.self,

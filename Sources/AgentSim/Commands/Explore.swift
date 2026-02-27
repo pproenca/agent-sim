@@ -6,6 +6,9 @@ struct Explore: AsyncParsableCommand {
     abstract: "Observe the current screen like a QA tester. Classifies all elements, computes fingerprint, and suggests next actions."
   )
 
+  @Flag(name: .short, help: "Interactive-only output: shows @eN refs for tappable elements. Minimal tokens.")
+  var interactive = false
+
   @Flag(name: .long, help: "Human-readable output instead of JSON.")
   var pretty = false
 
@@ -22,6 +25,21 @@ struct Explore: AsyncParsableCommand {
     let device = try await SimulatorBridge.resolveDevice()
     let simNode = try await AXTreeReader.readDeviceTree(simulatorUDID: device.udid, maxDepth: maxDepth)
     let analysis = ScreenAnalyzer.analyze(simNode)
+
+    // Load previous snapshot for diff hints (before overwriting)
+    let previousSnapshot = try? RefStore.load()
+
+    // Build and persist refs (always, so `tap @eN` works regardless of output mode)
+    let refs = RefStore.buildRefs(from: analysis)
+    let snapshot = RefSnapshot(
+      fingerprint: analysis.fingerprint,
+      screenName: analysis.screenName,
+      interactiveCount: analysis.interactiveCount,
+      elementCount: analysis.elementCount,
+      timestamp: ISO8601DateFormatter().string(from: Date()),
+      refs: refs
+    )
+    try RefStore.save(snapshot)
 
     // Plain screenshot (explicit path, no annotations)
     var screenshotPath: String?
@@ -47,7 +65,25 @@ struct Explore: AsyncParsableCommand {
       annotatedPath = plainCapture
     }
 
-    if pretty {
+    if interactive {
+      // Visual fallback: when AX tree has 0 interactive elements, use annotated screenshot
+      if refs.isEmpty && analysis.elementCount > 0 {
+        let fallbackRefs = try await visualFallback(device: device, analysis: analysis)
+        // Re-save ref store with visual refs so tap @eN works
+        let fallbackSnapshot = RefSnapshot(
+          fingerprint: analysis.fingerprint,
+          screenName: analysis.screenName,
+          interactiveCount: fallbackRefs.count,
+          elementCount: analysis.elementCount,
+          timestamp: ISO8601DateFormatter().string(from: Date()),
+          refs: fallbackRefs
+        )
+        try RefStore.save(fallbackSnapshot)
+        printInteractive(analysis, refs: fallbackRefs, screenshotPath: screenshotPath, previous: previousSnapshot, fallbackMode: true)
+      } else {
+        printInteractive(analysis, refs: refs, screenshotPath: screenshotPath, previous: previousSnapshot)
+      }
+    } else if pretty {
       printPretty(analysis, screenshotPath: screenshotPath, annotatedPath: annotatedPath)
     } else {
       let output = ExploreOutput(
@@ -58,6 +94,123 @@ struct Explore: AsyncParsableCommand {
       JSONOutput.print(output)
     }
   }
+
+  // MARK: - Visual Fallback
+
+  /// When AX tree has 0 interactive elements (Expo, bad accessibility), fall back to
+  /// annotating all visible content elements as visual refs.
+  private func visualFallback(
+    device: SimulatorBridge.BootedDevice,
+    analysis: ScreenAnalysis
+  ) async throws -> [RefEntry] {
+    let deviceSize = SimulatorBridge.screenSize(for: device)
+
+    // Use content elements as visual targets (they have text labels and positions)
+    var refs: [RefEntry] = []
+    var index = 1
+    for content in analysis.content {
+      refs.append(RefEntry(
+        ref: "e\(index)",
+        role: "visual",
+        name: content.text,
+        identifier: "",
+        tapX: content.frame.x + content.frame.width / 2,
+        tapY: content.frame.y + content.frame.height / 2,
+        width: content.frame.width,
+        height: content.frame.height,
+        enabled: true,
+        category: "visual"
+      ))
+      index += 1
+    }
+
+    // Capture and annotate screenshot with ref labels
+    let capturePath = ScreenAnnotator.defaultScreenshotPath
+    let plainCapture = try await SimulatorBridge.screenshot(simulatorID: device.udid, path: capturePath)
+    let elements = refs.map { ref in
+      ScreenAnnotator.AnnotatedElement(
+        box: Int(ref.ref.dropFirst()) ?? 0, // "e1" → 1
+        frame: CGRect(
+          x: Double(ref.tapX) - Double(ref.width) / 2,
+          y: Double(ref.tapY) - Double(ref.height) / 2,
+          width: Double(ref.width),
+          height: Double(ref.height)
+        ),
+        label: ref.name
+      )
+    }
+    let refLabels = refs.map { "@\($0.ref)" }
+    try ScreenAnnotator.annotate(
+      imagePath: plainCapture,
+      elements: elements,
+      deviceSize: deviceSize,
+      outputPath: plainCapture,
+      labels: refLabels
+    )
+
+    return refs
+  }
+
+  // MARK: - Interactive Output (explore -i)
+
+  private func printInteractive(
+    _ analysis: ScreenAnalysis,
+    refs: [RefEntry],
+    screenshotPath: String?,
+    previous: RefSnapshot?,
+    fallbackMode: Bool = false
+  ) {
+    let shortFP = String(analysis.fingerprint.prefix(8))
+
+    if let warning = analysis.warning {
+      print("WARNING: \(warning)")
+      print("")
+    }
+
+    // Diff hint: [changed] or [same] vs previous explore
+    if let prev = previous {
+      if prev.fingerprint != analysis.fingerprint {
+        let delta = analysis.interactiveCount - prev.interactiveCount
+        let deltaStr: String
+        if delta > 0 {
+          deltaStr = " | +\(delta) interactive"
+        } else if delta < 0 {
+          deltaStr = " | \(delta) interactive"
+        } else {
+          deltaStr = ""
+        }
+        print("[changed] Was: \(prev.screenName) -> Now: \(analysis.screenName)\(deltaStr)")
+      } else {
+        print("[same] \(analysis.screenName) | \(analysis.interactiveCount) interactive")
+      }
+    }
+
+    // Header line
+    print("Screen: \(analysis.screenName) | \(analysis.elementCount) elements, \(analysis.interactiveCount) interactive | fp:\(shortFP)")
+
+    if let path = screenshotPath {
+      print("Screenshot: \(path)")
+    }
+
+    if fallbackMode {
+      print("")
+      print("[fallback: 0 interactive elements — using visual detection]")
+      print("Screenshot: \(ScreenAnnotator.defaultScreenshotPath)")
+    }
+
+    if refs.isEmpty {
+      print("")
+      print("No interactive elements found. Use 'agent-sim screenshot' + 'tap <x> <y>'.")
+      return
+    }
+
+    print("")
+    for ref in refs {
+      print(ref.interactiveLine)
+    }
+  }
+
+  // MARK: - Pretty Output
 
   private func printPretty(
     _ analysis: ScreenAnalysis,

@@ -1,30 +1,41 @@
 ---
 name: agent-sim
-description: Explore and test iOS apps in Simulator using the AgentSim CLI with guided next-step commands and journaling.
+description: Explore and test iOS Simulator apps with a 2-command loop.
 ---
 
 # agent-sim
 
-Use this skill when an agent needs to interact with an iOS Simulator app through `agent-sim`.
+Drive an iOS Simulator app. The loop is: observe, act, repeat.
 
-## When to use
+## Core Loop
 
-- You need guided UI exploration via `agent-sim next`.
-- You need reproducible action logs with `agent-sim journal`.
-- You need simulator interaction without taking over mouse/keyboard.
+```
+agent-sim explore -i    # See interactive elements with @eN refs
+agent-sim tap @e3       # Tap element @e3. Returns "Done".
+agent-sim explore -i    # See what changed
+```
 
-## Instructions
+## Commands
 
-1. Build the app first using Xcode or `xcodebuild`. Do not use AgentSim for build steps.
-2. Start by running `agent-sim next --journal <path>` and copy the returned `action.command`.
-3. After every action, run `agent-sim wait --timeout 5`, `agent-sim fingerprint --hash-only`, and `agent-sim explore --annotate --pretty`.
-4. Execute taps from copied commands (`tap --box N` from `explore --annotate` or `action.command` from `next`), not from generated coordinates.
-5. Log each action immediately with `agent-sim journal log ... --auto-after`.
-6. If the app crashes or gets stuck, call `agent-sim next --journal <path>` again and follow its recovery action.
+| Command | What it does |
+|---------|-------------|
+| `explore -i` | List interactive elements with `@eN` refs |
+| `explore -i --screenshot <path>` | Same + capture screenshot |
+| `tap @eN` | Tap element by ref -> "Done" |
+| `tap --label "X"` | Tap by label (fallback) |
+| `swipe up\|down\|left\|right` | Scroll -> "Done" |
+| `type "text"` | Type into focused field -> "Done" |
+| `screenshot [path]` | Capture screen |
+| `assert --contains "X"` | Verify element exists |
+| `launch <bundleId>` | Launch app |
+| `wait` | Wait until screen is ready |
+| `boot` | Boot simulator |
+| `status` | Show booted simulators |
 
-## Guardrails
+## Rules
 
-- Use only `agent-sim` for simulator UI interactions.
-- Prefer `tap --box N` over labels or raw coordinates.
-- Avoid destructive actions (delete/sign out/remove) during exploratory sweeps.
-- Do not type into text fields unless the task explicitly requires it.
+- Always `explore -i` before acting. Refs refresh each time.
+- Use `@eN` refs, not coordinates. Coordinates are a last resort.
+- Skip destructive elements (Delete, Sign Out) unless told otherwise.
+- If 0 interactive elements: a system dialog may be blocking. Use `screenshot` + `tap <x> <y>`.
+- Each `explore -i` output shows screen name, element count, and fingerprint for navigation tracking.

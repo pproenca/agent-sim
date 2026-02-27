@@ -35,6 +35,9 @@ struct SwipeCmd: AsyncParsableCommand {
       duration: duration, simulatorID: device.udid
     )
 
+    // Auto-log
+    ActionLogger.log(ActionLogger.entry(action: "swipe", target: direction.rawValue))
+
     if describe {
       try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
 
@@ -42,6 +45,8 @@ struct SwipeCmd: AsyncParsableCommand {
         let analysis = ScreenAnalyzer.analyze(descNode)
         JSONOutput.print(analysis)
       }
+    } else {
+      print("Done")
     }
   }
 }

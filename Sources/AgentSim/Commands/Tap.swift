@@ -15,11 +15,8 @@ struct Tap: AsyncParsableCommand {
   @Option(name: .long, help: "Tap element by box number from the last annotated explore.")
   var box: Int?
 
-  @Argument(help: "X coordinate (simulator-relative).")
-  var x: Int?
-
-  @Argument(help: "Y coordinate (simulator-relative).")
-  var y: Int?
+  @Argument(help: "Element ref (@e1) or X Y coordinates.")
+  var args: [String] = []
 
   @Flag(name: .long, help: "Describe the screen after tapping.")
   var describe = false
@@ -28,12 +25,12 @@ struct Tap: AsyncParsableCommand {
   var delay: Double = 0.8
 
   func validate() throws {
-    let hasCoords = x != nil && y != nil
     let hasLabel = label != nil
     let hasID = id != nil
     let hasBox = box != nil
-    guard hasCoords || hasLabel || hasID || hasBox else {
-      throw ValidationError("Provide coordinates (x y), --label, --id, or --box N.")
+    let hasArgs = !args.isEmpty
+    guard hasArgs || hasLabel || hasID || hasBox else {
+      throw ValidationError("Provide a ref (@e1), coordinates (x y), --label, --id, or --box N.")
     }
   }
 
@@ -42,35 +39,68 @@ struct Tap: AsyncParsableCommand {
 
     var tapX: Int
     var tapY: Int
+    var targetName: String?
 
-    if let box {
+    if let refArg = args.first, refArg.hasPrefix("@") {
+      // Ref mode: tap @e3
+      let entry = try RefStore.resolve(refArg)
+      tapX = entry.tapX
+      tapY = entry.tapY
+      targetName = entry.name
+    } else if let box {
       let entry = try findBoxEntry(box)
       tapX = entry.tapX
       tapY = entry.tapY
-      printStatus("Tapping #\(box) \"\(entry.label)\" at (\(tapX),\(tapY))")
+      targetName = entry.label
     } else if let label {
       let (node, tapCoords) = try await findElement(simulatorUDID: device.udid, label: label, id: nil)
       tapX = tapCoords.0
       tapY = tapCoords.1
-      printStatus("Tapping \"\(node.displayName)\" at (\(tapX),\(tapY))")
+      targetName = node.displayName
     } else if let id {
       let (node, tapCoords) = try await findElement(simulatorUDID: device.udid, label: nil, id: id)
       tapX = tapCoords.0
       tapY = tapCoords.1
-      printStatus("Tapping \"\(node.displayName)\" at (\(tapX),\(tapY))")
+      targetName = node.displayName
+    } else if args.count >= 2, let x = Int(args[0]), let y = Int(args[1]) {
+      tapX = x
+      tapY = y
     } else {
-      tapX = x!
-      tapY = y!
+      throw ValidationError("Provide a ref (@e1), coordinates (x y), --label, --id, or --box N.")
+    }
+
+    // Log the target to stderr for debugging (hidden from LLM context)
+    if let name = targetName {
+      printStatus("Tapping \"\(name)\" at (\(tapX),\(tapY))")
+    } else {
       printStatus("Tapping at (\(tapX),\(tapY))")
     }
 
     try await SimulatorBridge.tap(x: tapX, y: tapY, simulatorID: device.udid)
+
+    // Auto-log (fire-and-forget, no AX tree read)
+    let logTarget: String
+    if let refArg = args.first, refArg.hasPrefix("@") {
+      logTarget = refArg
+    } else if let label {
+      logTarget = label
+    } else if let id {
+      logTarget = id
+    } else if let box {
+      logTarget = "#\(box)"
+    } else {
+      logTarget = "\(tapX),\(tapY)"
+    }
+    ActionLogger.log(ActionLogger.entry(action: "tap", target: logTarget, refName: targetName))
 
     if describe {
       try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
       if let descNode = try? await AXTreeReader.readDeviceTree(simulatorUDID: device.udid) {
         JSONOutput.print(descNode)
       }
+    } else {
+      // Minimal output — the agent reads this
+      print("Done")
     }
   }
 

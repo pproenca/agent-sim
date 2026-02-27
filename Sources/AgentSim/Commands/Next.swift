@@ -31,6 +31,10 @@ struct Next: AsyncParsableCommand {
   var pretty = false
 
   func run() async throws {
+    FileHandle.standardError.write(Data(
+      "warning: 'next' is deprecated. Use 'explore -i' + 'tap @eN' instead.\n".utf8
+    ))
+
     let instruction = try await buildInstruction()
 
     if pretty {
