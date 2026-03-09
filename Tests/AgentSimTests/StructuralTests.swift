@@ -192,6 +192,14 @@ struct StructuralTests {
     #expect(names.contains("context"))
   }
 
+  // MARK: - Stop command
+
+  @Test("stop command exists with expected command name")
+  func stopCommandExists() {
+    let config = Stop.configuration
+    #expect(config.commandName == "stop")
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")

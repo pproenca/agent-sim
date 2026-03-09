@@ -25,7 +25,7 @@ public struct AgentSim: AsyncParsableCommand {
       FingerprintCmd.self,
       Journal.self,
       Launch.self,
-      Terminate.self,
+      Stop.self,
       Network.self,
       Status.self,
       Update.self,

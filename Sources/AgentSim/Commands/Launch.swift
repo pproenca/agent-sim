@@ -33,20 +33,3 @@ struct Launch: AsyncParsableCommand {
     }
   }
 }
-
-struct Terminate: AsyncParsableCommand {
-  static let configuration = CommandConfiguration(
-    abstract: "Terminate a running app on the booted simulator."
-  )
-
-  @Argument(help: "Bundle identifier of the app to terminate.")
-  var bundleID: String
-
-  @Option(name: .long, help: "Target a specific simulator by UDID, bypassing the device pin.")
-  var udid: String?
-
-  func run() async throws {
-    let device = try await SimulatorBridge.resolveDevice(udid: udid)
-    try await SimulatorBridge.terminate(simulatorID: device.udid, bundleID: bundleID)
-  }
-}

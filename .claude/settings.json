@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "dev-workflow@dot-claude": true
+  }
+}

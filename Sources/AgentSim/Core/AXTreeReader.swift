@@ -76,7 +76,7 @@ enum AXTreeReader {
   static func readDeviceTree(simulatorUDID: String, maxDepth: Int = 20) async throws -> AXNode {
     let elements = try await AccessibilityFetcher.fetch(simulatorUDID: simulatorUDID)
     guard !elements.isEmpty else {
-      throw DescribeError.noScreenContent
+      throw ReadError.noScreenContent
     }
 
     // The top-level array usually contains a single root element (the window/app).
@@ -231,6 +231,19 @@ enum AXTreeReader {
       depth: node.depth,
       children: mappedChildren
     )
+  }
+
+  // MARK: - Errors
+
+  enum ReadError: Error, LocalizedError {
+    case noScreenContent
+
+    var errorDescription: String? {
+      switch self {
+      case .noScreenContent:
+        "Could not find iOS app content in the Simulator's accessibility tree."
+      }
+    }
   }
 
   // MARK: - Private
