@@ -107,6 +107,14 @@ enum SimulatorBridge {
     )
   }
 
+  // MARK: - Shutdown
+
+  /// Shut down a booted simulator.
+  static func shutdown(udid: String) async throws {
+    let simulator = try await resolveSimulator(udid: udid)
+    try await FutureBridge.value(simulator.shutdown())
+  }
+
   // MARK: - App Install
 
   struct InstalledApp: Encodable {

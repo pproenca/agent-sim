@@ -134,6 +134,20 @@ struct StructuralTests {
     #expect(decoded.tapY == 400)
   }
 
+  // MARK: - SimGroup subcommands
+
+  @Test("sim command group has expected subcommands")
+  func simGroupSubcommands() {
+    let config = SimGroup.configuration
+    #expect(config.commandName == "sim")
+    let names = config.subcommands.map { $0.configuration.commandName ?? "" }
+    #expect(names.contains("boot"))
+    #expect(names.contains("list"))
+    #expect(names.contains("shutdown"))
+    #expect(names.contains("install"))
+    #expect(names.contains("apps"))
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")
