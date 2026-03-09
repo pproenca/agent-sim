@@ -1,5 +1,13 @@
 import Foundation
 
+/// Build settings persisted in `.agent-sim/build.json`.
+struct BuildConfig: Codable {
+  var workspace: String?
+  var scheme: String?
+  var simulator: String?
+  var configuration: String?
+}
+
 /// Resolves AgentSim configuration by walking up the directory tree.
 ///
 /// Resolution chain:
@@ -206,6 +214,37 @@ enum ProjectConfig {
   static func templatesPath() -> String? {
     guard let root = assetRoot() else { return nil }
     return (root as NSString).appendingPathComponent("Templates")
+  }
+
+  // MARK: - Build Config
+
+  static func loadBuildConfig() throws -> BuildConfig {
+    let path = buildConfigPath()
+    let data = try Data(contentsOf: URL(fileURLWithPath: path))
+    return try JSONDecoder().decode(BuildConfig.self, from: data)
+  }
+
+  static func saveBuildConfig(_ config: BuildConfig) throws {
+    let path = buildConfigPath()
+    let dir = (path as NSString).deletingLastPathComponent
+    try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let data = try encoder.encode(config)
+    try data.write(to: URL(fileURLWithPath: path))
+  }
+
+  static func buildConfigPath() -> String {
+    let dir = configDir()
+    return (dir as NSString).appendingPathComponent("build.json")
+  }
+
+  /// Resolve the `.agent-sim/` directory (project-level) or fall back to `~/.config/agent-sim/`.
+  static func configDir() -> String {
+    if let dir = findAgentSimDirectory() {
+      return dir
+    }
+    return "\(NSHomeDirectory())/.config/agent-sim"
   }
 
   // MARK: - Private

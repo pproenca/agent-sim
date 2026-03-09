@@ -171,6 +171,27 @@ struct StructuralTests {
     #expect(names.contains("enabled"))
   }
 
+  // MARK: - ConfigGroup subcommands
+
+  @Test("config command group has set and show subcommands")
+  func configGroupSubcommands() {
+    let config = ConfigGroup.configuration
+    #expect(config.commandName == "config")
+    let names = config.subcommands.map { $0.configuration.commandName ?? "" }
+    #expect(names.contains("set"))
+    #expect(names.contains("show"))
+  }
+
+  // MARK: - ProjectGroupCmd subcommands
+
+  @Test("project command group has context subcommand")
+  func projectGroupSubcommands() {
+    let config = ProjectGroupCmd.configuration
+    #expect(config.commandName == "project")
+    let names = config.subcommands.map { $0.configuration.commandName ?? "" }
+    #expect(names.contains("context"))
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")

@@ -49,6 +49,22 @@ struct ProjectConfigTests {
     #expect(path.hasPrefix("/"))
   }
 
+  @Test("BuildConfig round-trips through Codable")
+  func buildConfigCodable() throws {
+    let config = BuildConfig(
+      workspace: "MyApp.xcworkspace",
+      scheme: "MyApp",
+      simulator: "iPhone 16",
+      configuration: "Debug"
+    )
+    let data = try JSONEncoder().encode(config)
+    let decoded = try JSONDecoder().decode(BuildConfig.self, from: data)
+    #expect(decoded.workspace == "MyApp.xcworkspace")
+    #expect(decoded.scheme == "MyApp")
+    #expect(decoded.simulator == "iPhone 16")
+    #expect(decoded.configuration == "Debug")
+  }
+
   @Test("Device pin/unpin round-trip in temp directory")
   func devicePinUnpin() throws {
     let tmpDir = FileManager.default.temporaryDirectory
