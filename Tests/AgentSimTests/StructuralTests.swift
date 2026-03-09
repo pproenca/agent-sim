@@ -167,16 +167,34 @@ struct StructuralTests {
     #expect(labels.contains("_diff"))
   }
 
-  // MARK: - Removed commands
+  // MARK: - CLI v2 command structure
 
-  @Test("removed commands are not registered")
-  func removedCommands() {
-    let names = AgentSim.configuration.subcommands.map {
+  @Test("CLI v2 command structure matches design")
+  func cliV2Structure() {
+    let topLevel = AgentSim.configuration.subcommands.map {
       String(describing: $0)
     }
-    // These should NOT be in the subcommands
-    for removed in ["Next", "Journal", "Network", "Init", "Use", "Status"] {
-      #expect(!names.contains(where: { $0.contains(removed) }))
+
+    // Flat commands (frequent)
+    #expect(topLevel.contains(where: { $0.contains("Explore") }))
+    #expect(topLevel.contains(where: { $0.contains("Tap") }))
+    #expect(topLevel.contains(where: { $0.contains("Swipe") }))
+    #expect(topLevel.contains(where: { $0.contains("TypeText") }))
+    #expect(topLevel.contains(where: { $0.contains("Screenshot") }))
+    #expect(topLevel.contains(where: { $0.contains("Launch") }))
+    #expect(topLevel.contains(where: { $0.contains("Stop") }))
+    #expect(topLevel.contains(where: { $0.contains("Doctor") }))
+    #expect(topLevel.contains(where: { $0.contains("Update") }))
+
+    // Grouped commands
+    #expect(topLevel.contains(where: { $0.contains("SimGroup") }))
+    #expect(topLevel.contains(where: { $0.contains("UIGroup") }))
+    #expect(topLevel.contains(where: { $0.contains("ConfigGroup") }))
+    #expect(topLevel.contains(where: { $0.contains("ProjectGroup") }))
+
+    // Removed commands should NOT be directly registered
+    for removed in ["Next", "Journal", "Init(", "Use(", "Status(", "Boot(", "Apps(", "AppInstall", "Assert(", "Wait(", "Describe", "FingerprintCmd", "Diff(", "Network", "Terminate"] {
+      #expect(!topLevel.contains(where: { $0.contains(removed) }), "Should not contain \(removed)")
     }
   }
 
