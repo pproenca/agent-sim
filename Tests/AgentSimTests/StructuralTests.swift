@@ -200,6 +200,29 @@ struct StructuralTests {
     #expect(config.commandName == "stop")
   }
 
+  // MARK: - Explore flags (merged describe, fingerprint, diff)
+
+  @Test("Explore has --raw, --fingerprint, --diff flags and old commands are removed")
+  func exploreMergedFlags() {
+    let config = AgentSim.configuration
+    let subcommandTypes = config.subcommands.map { String(describing: $0) }
+
+    // Old standalone commands removed
+    #expect(!subcommandTypes.contains("Describe"))
+    #expect(!subcommandTypes.contains("FingerprintCmd"))
+    #expect(!subcommandTypes.contains("Diff"))
+
+    // Explore still registered
+    #expect(subcommandTypes.contains("Explore"))
+
+    // Explore struct has the merged flags
+    let mirror = Mirror(reflecting: Explore())
+    let labels = mirror.children.compactMap(\.label)
+    #expect(labels.contains("_raw"))
+    #expect(labels.contains("_fingerprintOnly"))
+    #expect(labels.contains("_diff"))
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")
