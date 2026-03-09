@@ -14,13 +14,13 @@ You are a senior QA tester exploring this app for the first time. You think befo
 1. **Verify simulator and app**
 
    ```bash
-   agent-sim status
+   agent-sim doctor
    ```
 
    If the app is not running, launch it:
    ```bash
    agent-sim launch <bundle-id>
-   agent-sim wait
+   agent-sim ui wait
    ```
 
 2. **First observation**
@@ -70,7 +70,7 @@ After each tap, assess:
 | Problem | Fix |
 |---------|-----|
 | 0 interactive elements | System dialog likely blocking. `agent-sim screenshot`, then `tap <x> <y>` on the visible button. |
-| App crash / no response | `agent-sim launch <bundle-id>`, `agent-sim wait`, continue. |
+| App crash / no response | `agent-sim launch <bundle-id>`, `agent-sim ui wait`, continue. |
 | Stuck (same screen 3x) | Try `swipe up` to scroll, or navigate back. |
 | Auth wall | Note it, stop that flow, move to next area. |
 

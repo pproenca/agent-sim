@@ -8,7 +8,7 @@ AgentSim's output is designed so the **next command you need is already in the o
 LLMs are reliable at copying tokens they just read, unreliable at constructing commands
 from memory. Every AgentSim command follows this principle:
 
-- `next` returns `action.command` — the exact CLI command to run
+- `explore -i` returns `@eN` refs — copy the ref from output
 - `explore --annotate` returns `tap --box N` — copy the box number from output
 - Error messages include what's available, so recovery is also copy-based
 
@@ -16,8 +16,8 @@ from memory. Every AgentSim command follows this principle:
 
 | Best (copy) | Acceptable | Avoid (generate from memory) |
 |---|---|---|
-| `tap --box 3` (from explore --annotate) | `tap --label "Sign In"` (from explore output) | `tap 196 400` (coordinates from memory) |
-| Copy `action.command` from `next` | Copy label from `explore` JSON | Construct commands from context |
+| `tap @e3` (from explore -i) | `tap --label "Sign In"` (from explore output) | `tap 196 400` (coordinates from memory) |
+| `tap --box 3` (from explore --annotate) | Copy label from `explore` JSON | Construct commands from context |
 
 ## Tool Boundary — READ THIS FIRST
 
@@ -25,35 +25,34 @@ from memory. Every AgentSim command follows this principle:
 
 | Need | AgentSim command | NEVER use |
 |------|-----------------|-----------|
-| Boot a simulator | `agent-sim boot "iPhone 16"` | ~~open -a Simulator~~ ~~xcrun simctl boot~~ |
-| Install an app | `agent-sim install path/to/App.app` | ~~xcrun simctl install~~ |
-| Find bundle IDs | `agent-sim apps --pretty` | ~~manual Info.plist parsing~~ |
-| Wait for readiness | `agent-sim wait` | ~~sleep 2~~ |
-| See what's on screen | `agent-sim explore` or `agent-sim describe` | ~~XcodeBuildMCP snapshot_ui~~ |
+| Boot a simulator | `agent-sim sim boot "iPhone 16"` | ~~open -a Simulator~~ ~~xcrun simctl boot~~ |
+| Install an app | `agent-sim sim install path/to/App.app` | ~~xcrun simctl install~~ |
+| Find bundle IDs | `agent-sim sim apps --pretty` | ~~manual Info.plist parsing~~ |
+| Wait for readiness | `agent-sim ui wait` | ~~sleep 2~~ |
+| See what's on screen | `agent-sim explore` or `agent-sim explore --raw` | ~~XcodeBuildMCP snapshot_ui~~ |
 | See + annotated screenshot | `agent-sim explore --annotate` | ~~XcodeBuildMCP screenshot~~ |
-| Tap an element | `agent-sim tap --box N` or `agent-sim tap --label "X"` | ~~XcodeBuildMCP tap~~ ~~xcrun simctl~~ |
+| Tap an element | `agent-sim tap @eN` or `agent-sim tap --label "X"` | ~~XcodeBuildMCP tap~~ ~~xcrun simctl~~ |
 | Swipe/scroll | `agent-sim swipe up` | ~~XcodeBuildMCP gesture/swipe~~ |
 | Type text | `agent-sim type "hello"` | ~~XcodeBuildMCP type_text~~ |
 | Take plain screenshot | `agent-sim screenshot` or `agent-sim explore --screenshot path` | ~~xcrun simctl io~~ |
-| Launch/terminate app | `agent-sim launch <bundleId>` | ~~xcrun simctl launch~~ |
-| Check health | `agent-sim status` | ~~XcodeBuildMCP list_sims~~ |
-| Debug network errors | `agent-sim network --errors --pretty` | ~~Charles Proxy~~ ~~manual log parsing~~ |
-| Detect screen changes | `agent-sim fingerprint` | ~~custom hashing~~ |
-| Verify state | `agent-sim assert --contains "X"` | ~~manual grep/parse~~ |
+| Launch app | `agent-sim launch <bundleId>` | ~~xcrun simctl launch~~ |
+| Stop app | `agent-sim stop <bundleId>` | ~~xcrun simctl terminate~~ |
+| Check health | `agent-sim doctor` | ~~XcodeBuildMCP list_sims~~ |
+| Detect screen changes | `agent-sim explore --fingerprint` | ~~custom hashing~~ |
+| Verify state | `agent-sim ui assert visible "X"` | ~~manual grep/parse~~ |
 
 **Why this matters:**
 - AgentSim outputs coordinates in device-point space. These coordinates work directly with `agent-sim tap`. If you mix tools (e.g., read coordinates from XcodeBuildMCP, tap with agent-sim), they use different coordinate spaces and taps will miss.
-- AgentSim's `next` command tracks exploration state. If you use other tools for actions, the state machine loses track and gives wrong instructions.
-- AgentSim journals every action for reproducibility. Side-channel actions via xcrun/MCP create gaps in the journal.
+- AgentSim's explore-based workflow tracks what you've seen. If you use other tools for actions, you lose that context.
 
 **The only exception:** `XcodeBuildMCP build_sim` or `xcodebuild` for **building** the app. AgentSim does not build — it explores what's already built and running.
 
 ## TL;DR
 
-1. `agent-sim next` — always start here. It tells you exactly what to do.
-2. Follow the `afterAction` steps in order.
-3. Call `agent-sim next --journal <path>` again after each action.
-4. Repeat until `phase: "complete"`.
+1. `agent-sim explore -i` — always start here. See what's on screen with `@eN` refs.
+2. `agent-sim tap @eN` — tap the element you want.
+3. `agent-sim explore -i` — see what changed.
+4. Repeat until you've covered all reachable screens.
 
 ## Annotated Screenshots (explore --annotate)
 
@@ -99,231 +98,169 @@ again — the numbers will update to match the new screen state.
 
 ## The Loop
 
-AgentSim uses a **typed state machine**. You never decide what to do — you ask `next` and it tells you.
+AgentSim uses a simple **observe-act-repeat** loop:
 
 ```
-agent-sim next --journal <path>
+agent-sim explore -i          # See interactive elements with @eN refs
   ↓
-Parse JSON response
+Pick an element to tap
   ↓
-Branch on `phase`:
-  "not_started"     → Run the action.command (journal init), then afterAction steps
-  "new_screen"      → Run the action.command (tap), then afterAction steps
-  "exploring"       → Run the action.command (tap), then afterAction steps
-  "screen_exhausted"→ Run the action.command (back/swipe), then afterAction steps
-  "crashed"         → Run the action.command (recover), then afterAction steps
-  "complete"        → Stop. Run journal summary.
+agent-sim tap @eN             # Tap it
+  ↓
+agent-sim explore -i          # See what changed
+  ↓
+Repeat until all reachable screens are covered
 ```
 
-Every response includes:
-- **`phase`** — typed state, branch on this
-- **`instruction`** — human-readable explanation
-- **`action.command`** — exact CLI command to run (copy-paste it)
-- **`afterAction`** — ordered steps to run after the action (copy-paste each)
-- **`guardrails`** — rules to follow (read these)
-- **`progress`** — screens visited, actions taken, issues found
+Each `explore -i` output shows:
+- **Screen name** and **fingerprint** — for tracking navigation
+- **Interactive elements** with `@eN` refs — copy these for `tap`
+- **Element count** — to know when a screen is fully explored
 
 ## Cold Start (First Run)
 
 ```bash
 # 1. Boot a simulator (waits until fully usable — no sleep needed)
-agent-sim boot "iPhone 16"
+agent-sim sim boot "iPhone 16"
 
 # 2. Install the app (returns the bundle ID)
-agent-sim install path/to/MyApp.app
+agent-sim sim install path/to/MyApp.app
 
-# 3. Ask what to do — the state machine takes over
-agent-sim next
-
-# Response: phase="not_started", action.command="agent-sim journal init ..."
-# 4. Copy-paste the action.command and afterAction steps:
-agent-sim journal init --path build/agent-sim/sweep-journal.md --simulator "iPhone 16" --scope "Full app exploration"
-agent-sim boot
+# 3. Launch the app
 agent-sim launch com.example.myapp
-agent-sim wait --timeout 10
-agent-sim explore --pretty
-agent-sim next --journal build/agent-sim/sweep-journal.md
+
+# 4. Wait for the screen to be ready
+agent-sim ui wait
+
+# 5. Start exploring
+agent-sim explore -i
 
 # Now you're in the loop.
 ```
 
-## The Observe-Act-Journal Cycle
+## The Observe-Act Cycle
 
 Every iteration follows this pattern:
 
-### 1. Get instruction
+### 1. Observe the screen
 ```bash
-agent-sim next --journal <path>
+agent-sim explore -i
 ```
 
-### 2. Execute the action
+### 2. Tap an element
 ```bash
-# Copy the command from action.command — do not construct your own
-agent-sim tap --box 1
+# Copy the @eN ref from the explore output
+agent-sim tap @e3
 ```
 
-### 3. Detect transition
+### 3. Observe what changed
 ```bash
-sleep 1
-agent-sim fingerprint --hash-only
-```
-Compare with `currentScreen.fingerprint` from the `next` response.
-- Different hash → screen changed (navigated)
-- Same hash → stayed on same screen
-
-### 4. Observe new state
-```bash
-agent-sim explore --annotate --pretty
+agent-sim explore -i
 ```
 
-### 5. Journal the action
-```bash
-agent-sim journal log --path <journal> --index <N> --action tap --target "Sign In" \
-  --coords "196,400" --before "abc12345" --before-name "Welcome" \
-  --result navigated --after "def67890" --after-name "Login Form"
-```
-
-### 6. Get next instruction
-```bash
-agent-sim next --journal <path>
-```
+Compare fingerprints between observations:
+- Different fingerprint → screen changed (navigated)
+- Same fingerprint → stayed on same screen
 
 ## Issue Detection
 
-Flag an issue in the journal (`--issue "..."`) when:
+Flag an issue when you observe:
 
 | Signal | What it means |
 |--------|---------------|
 | Fingerprint changed but `explore` shows unexpected screen | **Wrong navigation** — tapping "Back" went to Home instead of parent |
-| `assert --contains "label"` fails | **Missing element** — expected content is absent |
+| `ui assert visible "label"` fails | **Missing element** — expected content is absent |
 | `explore` returns 0 elements or shows SpringBoard | **Crash** — app terminated |
 | Fingerprint unchanged after tapping interactive element | **Stuck** — element didn't respond |
 | Interactive element has no label or identifier | **Accessibility gap** — missing a11y metadata |
 
 ## Verification
 
-Use `assert` to verify expected state at any point:
+Use `ui assert` to verify expected state at any point:
 
 ```bash
-# Check we're on the right screen
-agent-sim assert --contains "Welcome" --not-contains "Error"
+# Check element is visible
+agent-sim ui assert visible "Welcome"
 
-# Check screen identity
-agent-sim assert --fingerprint "abc12345"
+# Check element is hidden
+agent-sim ui assert hidden "Error"
 
-# Check minimum interactivity
-agent-sim assert --min-interactive 3
+# Check text content
+agent-sim ui assert text "Welcome to MyApp"
+
+# Check element is enabled
+agent-sim ui assert enabled "Submit"
 ```
 
 Assert returns exit code 0 on pass, 1 on fail. JSON output includes all assertion results.
 
 ## Commands Reference
 
-### Setup (cold start)
+### Simulator management
 | Command | Use when |
 |---------|----------|
-| `boot [name]` | Need to boot a simulator. Waits until usable. |
-| `boot --list` | Need to see available (shutdown) simulators. |
-| `install <path>` | Need to install a .app or .ipa. Returns bundle ID. |
-| `apps [--pretty]` | Need to find installed bundle IDs. |
-| `wait [--timeout N]` | Need to wait for the screen to be ready. Replaces `sleep`. |
+| `sim boot [name]` | Need to boot a simulator. Waits until usable. |
+| `sim list` | Need to see available simulators. |
+| `sim install <path>` | Need to install a .app or .ipa. Returns bundle ID. |
+| `sim apps [--pretty]` | Need to find installed bundle IDs. |
+| `sim shutdown` | Need to shut down the booted simulator. |
 
 ### Observation (read-only)
 | Command | Use when | Output contains next command? |
 |---------|----------|------|
-| `next --journal <path>` | **Always start here.** Returns typed instruction. | Yes — `action.command` |
+| `explore -i` | **Start here.** Interactive elements with `@eN` refs. | Yes — `tap @eN` per element |
 | `explore --annotate [--pretty]` | Need screen analysis + annotated screenshot + tap commands | Yes — `tap --box N` per element |
 | `explore [--pretty]` | Need screen analysis without screenshot overhead | No — use labels or coordinates |
 | `explore --screenshot <path>` | Need clean unannotated screenshot (design review) | No |
-| `describe [--pretty\|--interactive]` | Need raw accessibility tree | No |
-| `fingerprint [--hash-only]` | Need screen identity for transition detection | No |
-| `status` | Need simulator/accessibility health check | No |
-| `network [--errors] [--pretty]` | Need HTTP-level diagnostics (requires `launch --network`) | No |
+| `explore --raw` | Need raw accessibility tree | No |
+| `explore --fingerprint` | Need screen identity for transition detection | No |
+| `explore --diff` | Need to see what changed since last explore | No |
 | `screenshot [path]` | Need standalone screenshot | No |
+| `doctor` | Need simulator/accessibility health check | No |
 
 ### Action (modifies state)
 | Command | Use when |
 |---------|----------|
-| `tap --box N` | **Preferred.** Tap element by box number from last `explore --annotate`. |
-| `tap --label "text"` | Tap by accessibility label (when box mapping unavailable). |
+| `tap @eN` | **Preferred.** Tap element by ref from last `explore -i`. |
+| `tap --box N` | Tap element by box number from last `explore --annotate`. |
+| `tap --label "text"` | Tap by accessibility label (when ref unavailable). |
 | `tap --id "identifier"` | Tap by accessibility identifier. |
 | `tap <x> <y>` | Tap by coordinates (last resort — fragile). |
 | `swipe <direction>` | Swiping (up/down/left/right). |
 | `type "text"` | Typing into a focused text field. |
 | `launch <bundleId>` | Launching the app. |
-| `launch --network <bundleId>` | Launching with HTTP diagnostics enabled. |
-| `terminate <bundleId>` | Terminating the app. |
+| `stop <bundleId>` | Stopping the app. |
 
 ### Verification
 | Command | Use when |
 |---------|----------|
-| `assert --contains "label"` | Checking element exists |
-| `assert --not-contains "label"` | Checking element is absent |
-| `assert --fingerprint "hash"` | Checking screen identity |
-| `assert --screen-name "Home"` | Checking screen name |
-| `assert --min-interactive N` | Checking minimum interactivity |
+| `ui assert visible "label"` | Checking element exists |
+| `ui assert hidden "label"` | Checking element is absent |
+| `ui assert text "content"` | Checking text content |
+| `ui assert enabled "label"` | Checking element is enabled |
+| `ui wait` | Waiting until the screen is ready |
+| `ui find "query"` | Finding elements matching a query |
 
-### Journaling
+### Configuration
 | Command | Use when |
 |---------|----------|
-| `journal init --path <path>` | Starting a new sweep |
-| `journal log --path <path> ... --auto-after` | Recording an action (auto-detects after-state) |
-| `journal summary --path <path>` | Getting sweep stats |
-
-## Network Debugging
-
-When the agent sees an error on screen but doesn't know the underlying cause, use the `network` command to inspect HTTP-level activity.
-
-**Setup:** Launch the app with `--network` to enable CFNetwork diagnostics:
-```bash
-agent-sim launch --network com.maddie.appnative
-```
-
-**Workflow:**
-```bash
-# 1. Agent sees error on screen via explore
-agent-sim explore --annotate --pretty
-# Output: "Something went wrong" dialog visible
-
-# 2. Check what happened at the network level
-agent-sim network --errors --pretty
-# Output:
-#   Network (last 30s) — 5 requests, 1 error
-#     #3  12:31:49  PATCH /api/sessions/abc  409  (98ms)  ERROR
-
-# 3. Now agent knows: 409 Conflict on PATCH /api/sessions — can diagnose the issue
-```
-
-**Flags:**
-```bash
-agent-sim network                   # Last 30s, all requests (JSON)
-agent-sim network --errors          # Only failures (status >= 400)
-agent-sim network --last 60         # Expand time window to 60s
-agent-sim network --url "/sessions" # Filter by URL path
-agent-sim network --pretty          # Human-readable table
-```
-
-If `network` returns no diagnostics, the app wasn't launched with `--network`. Relaunch:
-```bash
-agent-sim terminate com.maddie.appnative
-agent-sim launch --network com.maddie.appnative
-```
+| `config set -S "iPhone 16"` | Saving project settings (simulator name) |
+| `config show` | Viewing current configuration |
+| `project context` | Viewing project context |
 
 ## Guardrails
 
 These apply to every sweep. Violating them causes incorrect results.
 
-1. **Copy commands from output** — do not construct commands from memory. Use `action.command` from `next`, or `tap --box N` from `explore --annotate`.
-2. **Always use `next`** — do not decide what to tap on your own. The `next` command tracks what's been tapped and suggests the right next action.
-3. **Journal every action** — do not batch. Each tap/swipe gets its own journal entry immediately.
-4. **Fingerprint after every action** — this is how you detect screen transitions.
-5. **Skip destructive elements** — Delete, Sign Out, Remove, etc. These kill the session.
-6. **Do not type into text fields** — focus on tap interactions during exploration.
-7. **Wait after tapping** — use `agent-sim wait --timeout 5` before observing. Never use `sleep`.
-8. **Dismiss modals before continuing** — sheets, alerts, and popovers must be closed before returning to parent screen traversal.
-9. **If the app crashes, recover first** — log the crash, screenshot, relaunch, verify the screen, then continue.
-10. **Scroll before declaring a screen exhausted** — `agent-sim swipe up` to check for off-screen content.
-11. **Do not retry crashed actions** — if an action caused a crash, skip it and move on.
+1. **Copy refs from output** — do not construct commands from memory. Use `@eN` refs from `explore -i`, or `tap --box N` from `explore --annotate`.
+2. **Always `explore -i` before acting** — refs refresh each time. Don't reuse stale refs.
+3. **Skip destructive elements** — Delete, Sign Out, Remove, etc. These kill the session.
+4. **Do not type into text fields** — focus on tap interactions during exploration.
+5. **Wait after tapping** — use `agent-sim ui wait` before observing. Never use `sleep`.
+6. **Dismiss modals before continuing** — sheets, alerts, and popovers must be closed before returning to parent screen traversal.
+7. **If the app crashes, recover first** — screenshot, relaunch, verify the screen, then continue.
+8. **Scroll before declaring a screen exhausted** — `agent-sim swipe up` to check for off-screen content.
+9. **Do not retry crashed actions** — if an action caused a crash, skip it and move on.
 
 ## Claude Code Integration
 
@@ -339,11 +276,12 @@ UI interaction when AgentSim is available. XcodeBuildMCP is for build/test/debug
 **How to call from Claude Code:**
 ```bash
 # All agent-sim commands run via Bash tool
-agent-sim status                          # Health check
+agent-sim doctor                          # Health check
+agent-sim explore -i                      # See interactive elements with @eN refs
+agent-sim tap @e3                         # Tap element @e3
 agent-sim explore --annotate --pretty     # Observe screen + get tap commands
-agent-sim tap --box 1                     # Act on element #1 from explore
-agent-sim fingerprint --hash-only         # Detect transition
-agent-sim next --journal build/sweep.md   # Get next instruction (guided mode)
+agent-sim tap --box 1                     # Act on element #1 from annotated explore
+agent-sim explore --fingerprint           # Detect transition
 ```
 
 The binary lives at `tools/AgentSim/.build/debug/AgentSim`. If it's not built yet,

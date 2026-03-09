@@ -30,10 +30,6 @@ Check `$JOURNAL`. If not found, check `$JOURNALS/archive/` for recent sweeps.
 
 If multiple journals exist, use **AskUserQuestion** to select.
 
-```bash
-agent-sim journal summary --path "$JOURNAL"
-```
-
 Read the full journal. Parse every entry into a scenario:
 
 ```

@@ -31,10 +31,6 @@ Check `$JOURNAL`. If not found, check `$JOURNALS/archive/`.
 
 If multiple journals exist, use **AskUserQuestion** to select.
 
-```bash
-agent-sim journal summary --path "$JOURNAL"
-```
-
 Read the full journal. Parse every entry into a replayable scenario:
 
 ```
@@ -51,13 +47,13 @@ Announce: "Loaded N scenarios from sweep: \<scope\>"
 ## Step 2 — Ensure app is ready
 
 ```bash
-agent-sim status
+agent-sim doctor
 ```
 
 If not ready, launch the app using the bundle ID from the journal or from the project:
 ```bash
 agent-sim launch <bundle-id>
-sleep 2
+agent-sim ui wait
 ```
 
 ---
@@ -69,7 +65,7 @@ For each scenario in journal order:
 ### 3a. Verify we're on the right screen
 
 ```bash
-agent-sim fingerprint --hash-only
+agent-sim explore --fingerprint
 ```
 
 Compare against the scenario's `Given` fingerprint. If we're on a different screen:
@@ -77,11 +73,11 @@ Compare against the scenario's `Given` fingerprint. If we're on a different scre
 1. **Try the app's navigation to get there:**
    - If the target screen is a tab, tap the tab: `agent-sim tap --label "<tab name>"`
    - If we need to go back, tap back: `agent-sim tap --label "Back"`
-   - If it's a root screen, terminate and relaunch: `agent-sim terminate <bundle-id> && agent-sim launch <bundle-id> && sleep 2`
+   - If it's a root screen, stop and relaunch: `agent-sim stop <bundle-id> && agent-sim launch <bundle-id> && agent-sim ui wait`
 
 2. **Verify again:**
    ```bash
-   agent-sim assert --screen-name "<before-name>"
+   agent-sim ui assert visible "<before-name>"
    ```
 
 3. **If still wrong, mark as SKIP** with reason "could not navigate to starting screen"
@@ -102,8 +98,8 @@ sleep 1
 ### 3c. Verify outcome
 
 ```bash
-agent-sim fingerprint --hash-only
-agent-sim assert --screen-name "<after-name>"
+agent-sim explore --fingerprint
+agent-sim ui assert visible "<after-name>"
 ```
 
 Compare against the scenario's `Then`:
@@ -126,7 +122,7 @@ Compare against the scenario's `Then`:
 If the app crashes during replay:
 1. `agent-sim screenshot $JOURNALS/replay-crash-<N>.png`
 2. Mark the scenario as **FAIL** with reason "crash"
-3. `agent-sim launch <bundle-id> && sleep 2`
+3. `agent-sim launch <bundle-id> && agent-sim ui wait`
 4. Continue with the next scenario
 
 ---

@@ -77,7 +77,7 @@ Derived paths (use these throughout):
 1. **Check the simulator**
 
    ```bash
-   agent-sim status
+   agent-sim doctor
    ```
 
    If the app isn't running, ask the user for the bundle ID.

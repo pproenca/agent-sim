@@ -50,94 +50,85 @@ macOS AX API → screen-absolute coords
 All coordinates exposed to the user are in device-point space. They work directly with
 `agent-sim tap` — no manual conversion needed.
 
-## Core Design: The `next` Command
+## Core Design: The `explore -i` + `tap @eN` Loop
 
-Modeled after OpenSpec's `instructions` command — the single command that makes agent-driven
-sweeps reliable. The agent never decides what to do; it asks `next` and follows the typed response.
+The agent workflow is a simple observe-act loop. The agent uses `explore -i` to see
+interactive elements with `@eN` refs, then `tap @eN` to act on them.
 
 **How it works:**
-1. Reads the journal file to know what's been done
-2. Reads the current screen via the AX API
-3. Computes which elements are untapped
-4. Returns a typed instruction with exact CLI command, afterAction steps, and guardrails
+1. `explore -i` reads the current screen via the AX API
+2. Classifies elements and assigns `@eN` refs to interactive ones
+3. Agent picks an element and runs `tap @eN`
+4. Agent runs `explore -i` again to see what changed
+5. Repeat until all reachable screens are covered
 
-**Typed phases** (agent branches on this, never on free text):
-- `not_started` — no journal exists, init one
-- `new_screen` — screen not yet explored, start tapping
-- `exploring` — known screen with untapped elements
-- `screen_exhausted` — all elements tapped, navigate back
-- `crashed` — app unresponsive, recover
-- `complete` — all reachable screens explored
-
-**Why this pattern works** (learned from OpenSpec):
-- Agent gets exact CLI commands to copy-paste — no decision-making
-- AfterAction steps are ordered — agent follows them sequentially
-- Guardrails prevent common mistakes per phase
-- Progress tracking is built in — screensVisited, totalActions, issuesFound
-- Filesystem (journal) is source of truth — resumable, debuggable
+**Why this pattern works:**
+- Agent gets exact refs to copy-paste — no coordinate construction
+- Each `explore -i` shows screen name, element count, and fingerprint for navigation tracking
+- Refs refresh each call — always accurate to current screen state
+- No external state to manage — the screen IS the state
 
 See `AGENTS.md` for full agent instructions.
 
 ## CLI Commands
 
-### Setup (cold start)
-
-| Command | Purpose | Output |
-|---------|---------|--------|
-| `boot [name]` | Boot a simulator by name/UDID. Waits until usable. | JSON: udid, name, screen size |
-| `boot --list` | List available (shutdown) simulators | Text list |
-| `install <path>` | Install .app or .ipa. Returns bundle ID. | JSON: bundleID, name |
-| `apps [--running]` | List installed/running apps | JSON array |
-| `wait [--timeout N]` | Block until screen is AX-ready. Replaces `sleep`. | JSON: ready, elementCount |
-
-### Instruction (start here for sweeps)
-
-| Command | Purpose | Output |
-|---------|---------|--------|
-| `next --journal <path>` | **The core command.** Returns typed instruction: what to do, exact command, afterAction steps, guardrails. | JSON with `phase`, `action.command`, `afterAction[]`, `guardrails[]` |
-
-### Observation
+### Flat (top-level)
 
 | Command | Purpose | Output |
 |---------|---------|--------|
 | `explore` | Rich screen analysis — classified elements, fingerprint, suggested actions | JSON or `--pretty` |
-| `explore --annotate` | Same as above + annotated screenshot + `tap --box N` commands | JSON/pretty + PNG at default path |
-| `explore --screenshot <path>` | Same as explore + plain (unannotated) screenshot at given path | JSON/pretty + PNG |
-| `describe` | Raw accessibility tree | JSON or `--pretty` / `--interactive` |
-| `fingerprint` | Screen identity hash for transition detection | `{hash} {screenName}` or `--hash-only` |
-| `status` | Simulator + accessibility health check | Text |
+| `explore -i` | Interactive elements with `@eN` refs | Text with refs |
+| `explore --annotate` | Same as explore + annotated screenshot + `tap --box N` commands | JSON/pretty + PNG |
+| `explore --screenshot <path>` | Same as explore + plain screenshot at given path | JSON/pretty + PNG |
+| `explore --raw` | Raw accessibility tree | JSON or `--pretty` |
+| `explore --fingerprint` | Screen identity hash for transition detection | Hash string |
+| `explore --diff` | Show what changed since last explore | Diff output |
+| `tap @eN` | **Preferred.** Tap by ref from last `explore -i` | "Done" |
+| `tap --box N` | Tap by box number from last `explore --annotate` | "Done" |
+| `tap --label "Sign In"` | Tap by accessibility label | "Done" |
+| `tap --id "login.button"` | Tap by accessibility identifier | "Done" |
+| `tap <x> <y>` | Tap at coordinates | "Done" |
+| `swipe <up\|down\|left\|right>` | Swipe gesture | "Done" |
+| `type "hello"` | Type text into focused field | "Done" |
 | `screenshot [path]` | Capture PNG | File path |
+| `launch <bundleId>` | Launch app | JSON |
+| `stop <bundleId>` | Stop running app | JSON |
+| `doctor` | Simulator + accessibility health check | Text |
+| `update` | Update agent-sim to latest version | Text |
 
-### Action
+### Nested: `sim`
 
-| Command | Purpose |
-|---------|---------|
-| `tap --box N` | **Preferred.** Tap by box number from last `explore --annotate` |
-| `tap <x> <y>` | Tap at coordinates |
-| `tap --label "Sign In"` | Tap by accessibility label |
-| `tap --id "login.button"` | Tap by accessibility identifier |
-| `swipe <up\|down\|left\|right>` | Swipe gesture |
-| `type "hello"` | Type text into focused field |
-| `launch <bundleId>` | Launch app |
-| `terminate <bundleId>` | Terminate app |
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `sim boot [name]` | Boot a simulator by name/UDID. Waits until usable. | JSON: udid, name, screen size |
+| `sim list` | List available simulators | Text list |
+| `sim shutdown` | Shut down the booted simulator | JSON |
+| `sim install <path>` | Install .app or .ipa. Returns bundle ID. | JSON: bundleID, name |
+| `sim apps [--pretty]` | List installed apps | JSON array |
 
-### Verification
+### Nested: `ui`
 
-| Command | Purpose |
-|---------|---------|
-| `assert --contains "label"` | Verify element exists on screen |
-| `assert --not-contains "label"` | Verify element is absent |
-| `assert --fingerprint "hash"` | Verify we're on expected screen |
-| `assert --screen-name "Home"` | Verify screen name |
-| `assert --min-interactive N` | Verify minimum interactive elements |
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `ui assert visible "label"` | Verify element exists on screen | Exit 0/1 |
+| `ui assert hidden "label"` | Verify element is absent | Exit 0/1 |
+| `ui assert text "content"` | Verify text content | Exit 0/1 |
+| `ui assert enabled "label"` | Verify element is enabled | Exit 0/1 |
+| `ui wait [--timeout N]` | Block until screen is AX-ready. Replaces `sleep`. | JSON: ready, elementCount |
+| `ui find "query"` | Find elements matching a query | JSON array |
 
-### Journaling
+### Nested: `config`
 
-| Command | Purpose |
-|---------|---------|
-| `journal init [--path] [--simulator] [--scope]` | Create new sweep journal |
-| `journal log [--path] --index N --action "..." --auto-after` | Append action entry (auto-detects after-state) |
-| `journal summary [--path]` | Print journal stats (JSON) |
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `config set -S "iPhone 16"` | Save project settings | JSON |
+| `config show` | Show current configuration | JSON |
+
+### Nested: `project`
+
+| Command | Purpose | Output |
+|---------|---------|--------|
+| `project context` | Show project context | Text |
 
 All observation commands output JSON by default (for AI agent consumption). Human-readable
 output via `--pretty` flag.
@@ -146,13 +137,14 @@ output via `--pretty` flag.
 
 See [AGENTS.md](AGENTS.md) for the canonical agent workflow.
 
-The `next` command is the single entry point — agents do not manually
-orchestrate the observe/act/journal cycle. The cold-start flow:
+The `explore -i` + `tap @eN` loop is the core interaction pattern. The cold-start flow:
 
 ```bash
-agent-sim boot "iPhone 16"       # Boot + wait until usable
-agent-sim install path/to/App.app # Install, returns bundle ID
-agent-sim next                    # State machine takes over from here
+agent-sim sim boot "iPhone 16"       # Boot + wait until usable
+agent-sim sim install path/to/App.app # Install, returns bundle ID
+agent-sim launch com.example.myapp   # Launch the app
+agent-sim ui wait                    # Wait until screen is ready
+agent-sim explore -i                 # Start the loop
 ```
 
 ## Screen Analysis Model
@@ -215,7 +207,7 @@ converts through a two-step pipeline to produce device-point coordinates:
 
 The window-to-device scaling is necessary because the Simulator renders the iOS device
 at a scale factor on the Mac screen (e.g., iPhone 16's 393×852 renders as ~359×778 in
-the macOS window). Without scaling, coordinates from `describe` would miss when passed
+the macOS window). Without scaling, coordinates from `explore --raw` would miss when passed
 to `tap`.
 
 Device screen size is auto-detected from the booted simulator's device type via
@@ -223,7 +215,7 @@ Device screen size is auto-detected from the booted simulator's device type via
 screen sizes, with iPhone 16 (393×852) as the default fallback.
 
 All coordinates exposed to the user are in **device-point space** — the same coordinate
-system the iOS app uses. Coordinates from `describe`, `explore`, or `tap --label` can
+system the iOS app uses. Coordinates from `explore`, `explore --raw`, or `tap --label` can
 be passed directly to `tap <x> <y>` with no conversion.
 
 ## Why Not Just Use XcodeBuildMCP?
@@ -236,13 +228,12 @@ simulator interaction:
 |---|---|---|
 | **Transport** | CLI (Bash) — works in any context | MCP protocol — Claude Code only |
 | **Coordinate space** | Device points (auto-scaled) | Device points (native) |
-| **QA intelligence** | Element classification, fingerprinting, journaling, state machine | None — raw UI tree |
+| **QA intelligence** | Element classification, fingerprinting, `@eN` refs | None — raw UI tree |
 | **Overhead** | Direct function call (AXeCore linked in-process) | MCP protocol round-trip per action |
-| **Resumability** | Journal file = full state, resume any time | None |
 
-**The problem with mixing them:** AgentSim's `next` command tracks which elements have
-been tapped on which screens. If you tap via XcodeBuildMCP, AgentSim doesn't know about
-it and gives wrong instructions. The journal has gaps. The sweep becomes unreliable.
+**The problem with mixing them:** AgentSim's `explore -i` provides `@eN` refs that map
+to specific elements on the current screen. If you read elements from XcodeBuildMCP and
+tap with AgentSim (or vice versa), coordinate spaces differ and taps will miss.
 
 **Rule:** Use XcodeBuildMCP for building and testing. Use AgentSim for everything that
 involves driving the simulator UI. Never mix them for UI interaction in the same session.
@@ -268,18 +259,18 @@ tools/AgentSim/
     │   ├── Fingerprinter.swift     # Screen fingerprinting (SHA-256)
     │   └── SweepState.swift        # Typed sweep state machine + journal parser
     └── Commands/
-        ├── Next.swift              # THE core command — typed instructions for agent
-        ├── Explore.swift           # Rich screen observation with classification
-        ├── Describe.swift          # Raw accessibility tree output
-        ├── Tap.swift               # Tap by coords/label/id (via AXeCore HID)
+        ├── Explore.swift           # Rich screen observation with classification, --raw, --fingerprint, --diff
+        ├── Tap.swift               # Tap by ref/coords/label/id (via AXeCore HID)
         ├── Swipe.swift             # Swipe gesture (via AXeCore HID)
         ├── TypeText.swift          # Keyboard input (via AXeCore HID)
         ├── Screenshot.swift        # Screen capture (xcrun simctl io)
-        ├── FingerprintCmd.swift    # Screen identity hash
-        ├── Assert.swift            # State verification (exit 0/1)
-        ├── Journal.swift           # Sweep journal init/log/summary
-        ├── Launch.swift            # App launch + terminate (xcrun simctl)
-        └── Status.swift            # Health check
+        ├── Launch.swift            # App launch (xcrun simctl)
+        ├── Stop.swift              # App stop (xcrun simctl)
+        ├── Doctor.swift            # Health check
+        ├── Sim.swift               # sim boot/list/shutdown/install/apps
+        ├── UI.swift                # ui assert/wait/find
+        ├── Config.swift            # config set/show
+        └── Project.swift           # project context
 
 tools/axe-source/
 ├── Sources/AXeCore/               # Library: HID interactor, key codes, IDB bridge

@@ -28,10 +28,6 @@ Check `$JOURNAL`. If not found, check `$JOURNALS/archive/` for recent sweeps.
 
 Always announce: "Using sweep: \<scope\>" and the journal path.
 
-```bash
-agent-sim journal summary --path "$JOURNAL"
-```
-
 Read the full journal to extract:
 - **Issues**: crashes, wrong navigation, stuck elements, missing content
 - **Accessibility gaps**: elements without labels or identifiers

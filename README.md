@@ -61,22 +61,25 @@ After installation, these commands are available:
 
 ```bash
 # Boot a simulator (waits until fully ready)
-agent-sim boot "iPhone 16"
+agent-sim sim boot "iPhone 16"
 
 # Install your app
-agent-sim install path/to/MyApp.app
+agent-sim sim install path/to/MyApp.app
 
 # List installed apps (to find the bundle ID)
-agent-sim apps --pretty
+agent-sim sim apps --pretty
 
 # Launch it
 agent-sim launch com.example.myapp
 
 # Wait until the app is interactive
-agent-sim wait
+agent-sim ui wait
 
-# See what's on screen
-agent-sim explore --pretty
+# See what's on screen (interactive elements with @eN refs)
+agent-sim explore -i
+
+# Tap an element by ref
+agent-sim tap @e3
 
 # Tap an element by label
 agent-sim tap --label "Sign In"
@@ -87,26 +90,52 @@ agent-sim screenshot
 
 ## Commands
 
+### Top-level
+
 | Command | What it does |
 |---|---|
-| `boot` | Boot a simulator by name or UDID. Waits until usable. |
-| `install` | Install a .app or .ipa onto the booted simulator |
-| `apps` | List installed apps on the simulator |
-| `wait` | Block until the simulator screen is ready for interaction |
-| `status` | Show booted simulators and active device |
 | `explore` | Classify the current screen — actions, navigation, tabs, content |
-| `describe` | Show the raw accessibility tree |
-| `tap` | Tap an element by label, coordinates, or box number |
+| `explore -i` | List interactive elements with `@eN` refs |
+| `explore --raw` | Show the raw accessibility tree |
+| `explore --fingerprint` | Hash the current screen for change detection |
+| `explore --diff` | Show what changed since last explore |
+| `tap` | Tap an element by ref, label, coordinates, or box number |
 | `swipe` | Swipe up/down/left/right |
 | `type` | Type text via HID keyboard events |
 | `screenshot` | Capture the screen as PNG |
-| `fingerprint` | Hash the current screen for change detection |
-| `assert` | Verify screen state (exit 0 on pass, 1 on fail) |
 | `launch` | Launch an app by bundle ID |
-| `terminate` | Kill a running app |
-| `network` | Show recent HTTP activity from CFNetwork logs |
-| `next` | Get the next instruction for an automated QA sweep |
-| `use` | Pin a specific simulator when multiple are booted |
+| `stop` | Stop a running app |
+| `doctor` | Health check for simulator and accessibility |
+| `update` | Update agent-sim to latest version |
+
+### Simulator (`sim`)
+
+| Command | What it does |
+|---|---|
+| `sim boot` | Boot a simulator by name or UDID. Waits until usable. |
+| `sim list` | List available simulators |
+| `sim shutdown` | Shut down the booted simulator |
+| `sim install` | Install a .app or .ipa onto the booted simulator |
+| `sim apps` | List installed apps on the simulator |
+
+### UI verification (`ui`)
+
+| Command | What it does |
+|---|---|
+| `ui assert visible` | Verify element exists on screen |
+| `ui assert hidden` | Verify element is absent |
+| `ui assert text` | Verify text content |
+| `ui assert enabled` | Verify element is enabled |
+| `ui wait` | Block until the simulator screen is ready for interaction |
+| `ui find` | Find elements matching a query |
+
+### Configuration (`config`)
+
+| Command | What it does |
+|---|---|
+| `config set` | Save project settings |
+| `config show` | Show current configuration |
+| `project context` | Show project context |
 
 ## How it works
 

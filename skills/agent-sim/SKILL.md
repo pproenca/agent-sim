@@ -26,11 +26,14 @@ agent-sim explore -i    # See what changed
 | `swipe up\|down\|left\|right` | Scroll -> "Done" |
 | `type "text"` | Type into focused field -> "Done" |
 | `screenshot [path]` | Capture screen |
-| `assert --contains "X"` | Verify element exists |
+| `ui assert visible "X"` | Verify element exists |
+| `ui wait` | Wait until screen is ready |
+| `sim boot` | Boot simulator |
+| `sim list` | List simulators |
+| `config set -S "iPhone 16"` | Save project settings |
+| `stop <bundleId>` | Stop running app |
 | `launch <bundleId>` | Launch app |
-| `wait` | Wait until screen is ready |
-| `boot` | Boot simulator |
-| `status` | Show booted simulators |
+| `doctor` | Health check |
 
 ## Rules
 
