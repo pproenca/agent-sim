@@ -148,6 +148,29 @@ struct StructuralTests {
     #expect(names.contains("apps"))
   }
 
+  // MARK: - UIGroup subcommands
+
+  @Test("ui command group has assert, wait, and find subcommands")
+  func uiGroupSubcommands() {
+    let config = UIGroup.configuration
+    #expect(config.commandName == "ui")
+    let names = config.subcommands.map { $0.configuration.commandName ?? "" }
+    #expect(names.contains("assert"))
+    #expect(names.contains("wait"))
+    #expect(names.contains("find"))
+  }
+
+  @Test("ui assert has visible, hidden, text, enabled subcommands")
+  func uiAssertSubcommands() {
+    let config = UIAssertGroup.configuration
+    #expect(config.commandName == "assert")
+    let names = config.subcommands.map { $0.configuration.commandName ?? "" }
+    #expect(names.contains("visible"))
+    #expect(names.contains("hidden"))
+    #expect(names.contains("text"))
+    #expect(names.contains("enabled"))
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")

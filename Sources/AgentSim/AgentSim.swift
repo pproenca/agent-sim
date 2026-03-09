@@ -10,7 +10,7 @@ public struct AgentSim: AsyncParsableCommand {
     subcommands: [
       Init.self,
       SimGroup.self,
-      Wait.self,
+      UIGroup.self,
       Use.self,
       ConfigCmd.self,
       Next.self,
@@ -22,7 +22,6 @@ public struct AgentSim: AsyncParsableCommand {
       TypeText.self,
       Screenshot.self,
       FingerprintCmd.self,
-      Assert.self,
       Journal.self,
       Launch.self,
       Terminate.self,
