@@ -9,35 +9,6 @@ struct StructuralTests {
 
   // MARK: - Encodable conformance (output types must encode to valid JSON)
 
-  @Test("NextInstruction encodes to valid JSON")
-  func nextInstructionEncodes() throws {
-    let instruction = NextInstruction(
-      phase: .exploring,
-      instruction: "Continue exploring",
-      action: .init(
-        type: .tap, target: "Button",
-        command: "agent-sim tap 100 200",
-        reason: "test", tapX: 100, tapY: 200
-      ),
-      currentScreen: .init(
-        name: "Home", fingerprint: "abc12345",
-        interactiveCount: 5, tappedCount: 2, remainingCount: 3
-      ),
-      progress: .init(
-        screensVisited: 3, totalActions: 10,
-        issuesFound: 1, crashesDetected: 0, journalPath: "/tmp/j.md"
-      ),
-      afterAction: ["step 1", "step 2"],
-      guardrails: ["rule 1"]
-    )
-
-    let data = try JSONEncoder().encode(instruction)
-    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-
-    #expect(json != nil)
-    #expect(json?["phase"] as? String == "exploring")
-  }
-
   @Test("ScreenAnalysis encodes to valid JSON")
   func screenAnalysisEncodes() throws {
     let analysis = ScreenAnalysis(
@@ -60,21 +31,6 @@ struct StructuralTests {
     #expect(json?["fingerprint"] as? String == "abc12345")
   }
 
-  @Test("NetworkLogParser.ParseResult encodes to valid JSON")
-  func parseResultEncodes() throws {
-    let result = NetworkLogParser.ParseResult(
-      diagnosticsEnabled: true,
-      requests: [.init(index: 1, timestamp: "10:00:00", method: "GET", url: "https://api.test.com", statusCode: 200, isError: false, errorDetail: nil, durationMs: 150)],
-      rawEntries: []
-    )
-
-    let data = try JSONEncoder().encode(result)
-    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-
-    #expect(json != nil)
-    #expect(json?["diagnosticsEnabled"] as? Bool == true)
-  }
-
   @Test("AXNode encodes to valid JSON")
   func axNodeEncodes() throws {
     let node = AXNodeBuilder.button("Test", at: (100, 200))
@@ -84,18 +40,6 @@ struct StructuralTests {
     #expect(json != nil)
     #expect(json?["role"] as? String == "AXButton")
     #expect(json?["label"] as? String == "Test")
-  }
-
-  // MARK: - SweepPhase raw values
-
-  @Test("SweepPhase raw values are stable snake_case strings")
-  func sweepPhaseRawValues() {
-    #expect(SweepPhase.notStarted.rawValue == "not_started")
-    #expect(SweepPhase.exploring.rawValue == "exploring")
-    #expect(SweepPhase.screenExhausted.rawValue == "screen_exhausted")
-    #expect(SweepPhase.newScreen.rawValue == "new_screen")
-    #expect(SweepPhase.crashed.rawValue == "crashed")
-    #expect(SweepPhase.complete.rawValue == "complete")
   }
 
   // MARK: - Sendable conformance (compile-time check)
@@ -223,6 +167,19 @@ struct StructuralTests {
     #expect(labels.contains("_diff"))
   }
 
+  // MARK: - Removed commands
+
+  @Test("removed commands are not registered")
+  func removedCommands() {
+    let names = AgentSim.configuration.subcommands.map {
+      String(describing: $0)
+    }
+    // These should NOT be in the subcommands
+    for removed in ["Next", "Journal", "Network", "Init", "Use", "Status"] {
+      #expect(!names.contains(where: { $0.contains(removed) }))
+    }
+  }
+
   // MARK: - Error descriptions
 
   @Test("All error types produce non-empty descriptions")
@@ -240,10 +197,6 @@ struct StructuralTests {
     let tapBoxNotFound = TapError.boxNotFound(5, available: "#1, #2")
     #expect(!tapBoxNotFound.localizedDescription.isEmpty)
     #expect(tapBoxNotFound.localizedDescription.contains("5"))
-
-    let journalNotFound = JournalError.fileNotFound("/tmp/test.md")
-    #expect(!journalNotFound.localizedDescription.isEmpty)
-    #expect(journalNotFound.localizedDescription.contains("/tmp/test.md"))
 
     let noSim = DeviceResolutionError.noSimulator
     #expect(!noSim.localizedDescription.isEmpty)
