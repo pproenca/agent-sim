@@ -16,5 +16,13 @@ struct Stop: AsyncParsableCommand {
   func run() async throws {
     let device = try await SimulatorBridge.resolveDevice(udid: udid)
     try await SimulatorBridge.terminate(simulatorID: device.udid, bundleID: bundleID)
+    let output = StopOutput(status: "stopped", bundleID: bundleID, simulator: device.name)
+    JSONOutput.print(output)
   }
+}
+
+private struct StopOutput: Encodable {
+  let status: String
+  let bundleID: String
+  let simulator: String
 }

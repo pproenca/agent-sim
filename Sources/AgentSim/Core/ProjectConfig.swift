@@ -71,10 +71,6 @@ enum ProjectConfig {
     return (cwd as NSString).appendingPathComponent(path)
   }
 
-  /// Default journal file path within the resolved journals directory.
-  static func defaultJournalPath() -> String {
-    (journalsDirectory() as NSString).appendingPathComponent("sweep-journal.md")
-  }
 
   // MARK: - Config File Locations
 

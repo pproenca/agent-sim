@@ -186,7 +186,7 @@ agent-sim ui assert visible "Welcome"
 agent-sim ui assert hidden "Error"
 
 # Check text content
-agent-sim ui assert text "Welcome to MyApp"
+agent-sim ui assert text "Welcome" "Welcome to MyApp"
 
 # Check element is enabled
 agent-sim ui assert enabled "Submit"
@@ -236,7 +236,7 @@ Assert returns exit code 0 on pass, 1 on fail. JSON output includes all assertio
 |---------|----------|
 | `ui assert visible "label"` | Checking element exists |
 | `ui assert hidden "label"` | Checking element is absent |
-| `ui assert text "content"` | Checking text content |
+| `ui assert text "label" "expected"` | Checking text content |
 | `ui assert enabled "label"` | Checking element is enabled |
 | `ui wait` | Waiting until the screen is ready |
 | `ui find "query"` | Finding elements matching a query |

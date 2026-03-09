@@ -5,7 +5,7 @@ struct ConfigGroup: ParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "config",
     abstract: "Save and show project settings.",
-    subcommands: [ConfigSet.self, ConfigShow.self]
+    subcommands: [ConfigSet.self, ConfigShow.self, ConfigJournals.self, ConfigRoot.self]
   )
 }
 
@@ -56,6 +56,34 @@ struct ConfigShow: ParsableCommand {
       configuration: buildConfig?.configuration
     )
     JSONOutput.print(output)
+  }
+}
+
+struct ConfigJournals: ParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "journals",
+    abstract: "Print the resolved journals directory path."
+  )
+
+  func run() {
+    print(ProjectConfig.journalsDirectory())
+  }
+}
+
+struct ConfigRoot: ParsableCommand {
+  static let configuration = CommandConfiguration(
+    commandName: "root",
+    abstract: "Print the AgentSim asset root path."
+  )
+
+  func run() {
+    if let root = ProjectConfig.assetRoot() {
+      print(root)
+    } else if let root = ProjectConfig.pluginRoot() {
+      print(root)
+    } else {
+      fputs("Could not resolve AgentSim root.\n", stderr)
+    }
   }
 }
 

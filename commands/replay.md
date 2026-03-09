@@ -85,13 +85,13 @@ Compare against the scenario's `Given` fingerprint. If we're on a different scre
 
 ```bash
 agent-sim tap --label "<target>"
-sleep 1
+agent-sim ui wait
 ```
 
 If the element can't be found by label (layout changed), fall back to coordinates:
 ```bash
 agent-sim tap <x> <y>
-sleep 1
+agent-sim ui wait
 ```
 
 ### 3c. Verify outcome

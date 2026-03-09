@@ -112,7 +112,7 @@ See `AGENTS.md` for full agent instructions.
 |---------|---------|--------|
 | `ui assert visible "label"` | Verify element exists on screen | Exit 0/1 |
 | `ui assert hidden "label"` | Verify element is absent | Exit 0/1 |
-| `ui assert text "content"` | Verify text content | Exit 0/1 |
+| `ui assert text "label" "expected"` | Verify text content | Exit 0/1 |
 | `ui assert enabled "label"` | Verify element is enabled | Exit 0/1 |
 | `ui wait [--timeout N]` | Block until screen is AX-ready. Replaces `sleep`. | JSON: ready, elementCount |
 | `ui find "query"` | Find elements matching a query | JSON array |
@@ -257,7 +257,6 @@ tools/AgentSim/
     │   ├── SimulatorBridge.swift   # AXeCore HID + xcrun simctl (screenshot/launch/terminate)
     │   ├── ScreenAnalysis.swift    # Screen analysis model + builder
     │   ├── Fingerprinter.swift     # Screen fingerprinting (SHA-256)
-    │   └── SweepState.swift        # Typed sweep state machine + journal parser
     └── Commands/
         ├── Explore.swift           # Rich screen observation with classification, --raw, --fingerprint, --diff
         ├── Tap.swift               # Tap by ref/coords/label/id (via AXeCore HID)
@@ -267,10 +266,11 @@ tools/AgentSim/
         ├── Launch.swift            # App launch (xcrun simctl)
         ├── Stop.swift              # App stop (xcrun simctl)
         ├── Doctor.swift            # Health check
-        ├── Sim.swift               # sim boot/list/shutdown/install/apps
-        ├── UI.swift                # ui assert/wait/find
-        ├── Config.swift            # config set/show
-        └── Project.swift           # project context
+        ├── Update.swift            # Self-update to latest version
+        ├── SimGroup.swift          # sim boot/list/shutdown/install/apps
+        ├── UIGroup.swift           # ui assert/wait/find
+        ├── ConfigGroup.swift       # config set/show/journals/root
+        └── ProjectGroup.swift      # project context
 
 tools/axe-source/
 ├── Sources/AXeCore/               # Library: HID interactor, key codes, IDB bridge
